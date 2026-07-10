@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Machine Operator Training Log</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --text: #2C2C2B;
+    --text2: #7D7A75;
+    --canvas: #FFFFFF;
+    --surface: #F9F8F7;
+    --surface2: #F0EFED;
+    --border: #E6E5E3;
+    --blue: #2783DE;
+    --blue-soft: #E5F2FC;
+    --green: #46A171;
+    --green-soft: #E8F1EC;
+    --orange: #D5803B;
+    --orange-soft: #FBEBDE;
+    --red: #E56458;
+    --red-soft: #FCE9E7;
+    --radius: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--surface);
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .page-header {
+    background: var(--canvas);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .page-header-icon { font-size: 24px; }
+  .page-header h1 { font-size: 17px; font-weight: 600; color: var(--text); }
+  .page-header-sub { font-size: 13px; color: var(--text2); margin-left: auto; }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--canvas);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+
+  /* ── Callout ── */
+  .callout {
+    background: var(--blue-soft);
+    border-left: 3px solid var(--blue);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+  .callout strong { color: var(--blue); }
+
+  /* ── Phase tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { background: var(--canvas); color: var(--text); }
+  .tab-btn.active {
+    background: var(--canvas);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    font-weight: 600;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Info table ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 8px 12px;
+    align-items: center;
+  }
+  .info-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .info-input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .info-input:focus {
+    border-color: var(--blue);
+    background: var(--canvas);
+  }
+
+  /* ── Section heading ── */
+  .section-heading {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    padding-left: 2px;
+  }
+
+  /* ── Day sub-heading ── */
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .day-badge {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .date-input {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .date-input:focus { border-color: var(--blue); background: var(--canvas); }
+
+  /* ── Block label ── */
+  .block-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 16px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── Checkbox list ── */
+  .check-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  @media (max-width: 500px) { .check-list { grid-template-columns: 1fr; } }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .12s;
+    font-size: 13.5px;
+  }
+  .check-item:hover { background: var(--surface); }
+  .check-item input[type=checkbox] {
+    width: 16px; height: 16px;
+    accent-color: var(--blue);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .check-item.checked {
+    background: var(--blue-soft);
+    border-color: var(--blue);
+  }
+
+  /* ── Score table ── */
+  .score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .score-table th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .score-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--surface2);
+    vertical-align: middle;
+  }
+  .score-table tr:last-child td { border-bottom: none; }
+  .score-select {
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+  .score-select:focus { border-color: var(--blue); }
+  .score-total-row td { font-weight: 600; background: var(--surface); }
+  .score-total-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--surface2);
+    color: var(--text);
+    min-width: 52px;
+    text-align: center;
+  }
+  .score-total-badge.good { background: var(--green-soft); color: var(--green); }
+  .score-total-badge.mid { background: var(--orange-soft); color: var(--orange); }
+  .score-total-badge.low { background: var(--red-soft); color: var(--red); }
+
+  /* ── Tag list ── */
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .12s;
+    background: var(--canvas);
+  }
+  .tag-item:hover { background: var(--surface); }
+  .tag-item input[type=checkbox] {
+    width: 14px; height: 14px;
+    accent-color: var(--blue);
+    cursor: pointer;
+  }
+  .tag-item.checked {
+    background: var(--blue-soft);
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+
+  /* ── Notes ── */
+  .notes-area {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color .15s;
+  }
+  .notes-area:focus { border-color: var(--blue); background: var(--canvas); }
+
+  /* ── Decision box ── */
+  .decision-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-top: 20px;
+  }
+  .decision-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .decision-score {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .decision-options { display: flex; flex-direction: column; gap: 8px; }
+  .decision-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13.5px;
+    transition: all .12s;
+    background: var(--canvas);
+  }
+  .decision-option:hover { background: var(--surface); }
+  .decision-option input[type=radio] {
+    width: 16px; height: 16px;
+    accent-color: var(--blue);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .decision-option.pass { border-color: var(--green); background: var(--green-soft); }
+  .decision-option.extend { border-color: var(--orange); background: var(--orange-soft); }
+  .decision-option.report { border-color: var(--red); background: var(--red-soft); }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ── Summary ── */
+  .summary-section { margin-top: 24px; }
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .summary-table th, .summary-table td {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  .summary-table th {
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text2);
+    letter-spacing: .05em;
+  }
+  .summary-table td input, .summary-table td select {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+  }
+
+  /* ── Print button ── */
+  .print-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--canvas);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    z-index: 200;
+  }
+  .btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 7px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-secondary { background: var(--surface2); color: var(--text); }
+
+  .lang-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--canvas);
+    color: var(--text);
+    margin-left: 12px;
+    transition: all .15s;
+  }
+  .lang-btn:hover { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+  [lang=en] .zh { display: none; }
+  [lang=zh] .en { display: none; }
+
+  @media print {
+    .print-bar, .tabs, .page-header { display: none !important; }
+    .tab-panel { display: block !important; }
+    .card { break-inside: avoid; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <span class="page-header-icon">📋</span>
+  <h1><span class="zh">Machine Operator 新人訓練記錄表</span><span class="en">Machine Operator Training Log</span></h1>
+  <span class="page-header-sub">Trainer Daily Log</span>
+  <button class="lang-btn" id="lang-toggle" onclick="toggleLang()">🌐 English</button>
+</header>
+
+<div class="container">
+
+  <div class="callout">
+    <span class="zh"><strong>使用說明：</strong> 每天結束前花 3–5 分鐘填寫當日區塊。Tick 任務 → 評分 → 選標籤 → 一行備注。最後在 Management Summary 填入匯總資料交給主管。</span><span class="en"><strong>How to Use:</strong> Spend 3–5 min at end of each shift. Tick tasks → Score → Select tags → Write one note. Fill Management Summary at end and hand to supervisor.</span>
+  </div>
+
+  <!-- ━━━ TRAINEE INFO ━━━ -->
+  <div class="card">
+    <div class="card-title"><span class="zh">📝 基本資料 / Trainee Info</span><span class="en">📝 Trainee Info</span></div>
+    <div class="info-grid">
+      <span class="info-label"><span class="zh">受訓員工姓名 Trainee Name</span><span class="en">Trainee Name</span></span>
+      <input class="info-input" type="text" placeholder="Enter name" id="trainee-name">
+
+      <span class="info-label"><span class="zh">訓練開始日期 Start Date</span><span class="en">Start Date</span></span>
+      <input class="info-input" type="date" id="start-date">
+
+      <span class="info-label"><span class="zh">負責訓練者 Trainer Name</span><span class="en">Trainer Name</span></span>
+      <input class="info-input" type="text" placeholder="Enter name" id="trainer-name">
+
+      <span class="info-label"><span class="zh">機台 / 產線 Machine / Line</span><span class="en">Machine / Line</span></span>
+      <input class="info-input" type="text" placeholder="例：B2 Propack A" id="machine-line">
+
+      <span class="info-label"><span class="zh">排班班別 Shift</span><span class="en">Shift</span></span>
+      <input class="info-input" type="text" placeholder="例：Afternoon Shift" id="shift">
+    </div>
+  </div>
+
+  <!-- ━━━ TABS ━━━ -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('phase1')" id="tab-phase1">🟢 Phase 1<br><small style="font-weight:400">Day 1–3</small></button>
+    <button class="tab-btn" onclick="switchTab('phase2')" id="tab-phase2">🟡 Phase 2<br><small style="font-weight:400">Day 4–7</small></button>
+    <button class="tab-btn" onclick="switchTab('phase3')" id="tab-phase3">🔴 Phase 3<br><small style="font-weight:400">Week 2+</small></button>
+    <button class="tab-btn" onclick="switchTab('summary')" id="tab-summary">📄 Summary</button>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PHASE 1 -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-phase1">
+    <div class="card">
+      <div class="section-heading"><span class="zh">🟢 Phase 1 — 態度觀察期 (Day 1–3)</span><span class="en">🟢 Phase 1 — Attitude Observation (Day 1–3)</span></div>
+      <div class="section-desc"><span class="zh">核心問題：這個人值得我們投入時間繼續培訓嗎？只分配低技術輔助任務，觀察態度，不需要教機台操作。</span><span class="en">Core question: Is this person worth investing more training time? Assign only low-skill support tasks. Observe attitude. Do not teach machine operation.</span></div>
+
+      <!-- Day 1 -->
+      <div class="day-header">
+        <span class="day-badge">Day 1</span>
+        <input class="date-input" type="date" id="d1-date">
+      </div>
+
+      <div class="block-label"><span class="zh">✅ 今日任務指派 Tasks Assigned</span><span class="en">✅ Tasks Assigned Today</span></div>
+      <div class="check-list" id="d1-tasks">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔機台周邊</span><span class="en">Clean around machine</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔地板</span><span class="en">Clean floors</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔工作檯面</span><span class="en">Clean workbenches</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充包裝袋</span><span class="en">Refill pouches</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充蓋子</span><span class="en">Refill lids</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">協助搬運成品托盤</span><span class="en">Assist moving finished trays</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">整理包裝材料</span><span class="en">Organise packaging materials</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score <span style="font-weight:400;color:var(--text2)">1=差 / 2=普通 / 3=好</span></span><span class="en">📊 Attitude Score <span style="font-weight:400;color:var(--text2)">1=Poor / 2=Average / 3=Good</span></span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d1-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 態度積極</span><span class="en">💪 Positive attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 主動問問題</span><span class="en">❓ Asked questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🐢 慢但認真</span><span class="en">🐢 Slow but genuine</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 被動等指示</span><span class="en">😐 Passive, waited for instructions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全意識弱</span><span class="en">⚠️ Safety awareness needs improvement</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🚩 態度需關注</span><span class="en">🚩 Attitude concern flagged</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">💬 訓練者備注 <span style="font-weight:400;color:var(--text2)">(一行即可)</span></span><span class="en">💬 Trainer Notes <span style="font-weight:400;color:var(--text2)">(one sentence is enough)</span></span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2" id="d1-notes"></textarea>
+
+      <hr>
+
+      <!-- Day 2 -->
+      <div class="day-header">
+        <span class="day-badge">Day 2</span>
+        <input class="date-input" type="date" id="d2-date">
+      </div>
+
+      <div class="block-label"><span class="zh">✅ 今日任務指派 Tasks Assigned</span><span class="en">✅ Tasks Assigned Today</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔機台周邊</span><span class="en">Clean around machine</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔地板</span><span class="en">Clean floors</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔工作檯面</span><span class="en">Clean workbenches</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充包裝袋</span><span class="en">Refill pouches</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充蓋子</span><span class="en">Refill lids</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">協助搬運成品托盤</span><span class="en">Assist moving finished trays</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">整理包裝材料</span><span class="en">Organise packaging materials</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score</span><span class="en">📊 Attitude Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d2-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 態度積極</span><span class="en">💪 Positive attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 主動問問題</span><span class="en">❓ Asked questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🐢 慢但認真</span><span class="en">🐢 Slow but genuine</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 被動等指示</span><span class="en">😐 Passive, waited for instructions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全意識弱</span><span class="en">⚠️ Safety awareness needs improvement</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🚩 態度需關注</span><span class="en">🚩 Attitude concern flagged</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">💬 訓練者備注 Trainer Notes</span><span class="en">💬 Trainer Notes</span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2" id="d2-notes"></textarea>
+
+      <hr>
+
+      <!-- Day 3 -->
+      <div class="day-header">
+        <span class="day-badge">Day 3</span>
+        <input class="date-input" type="date" id="d3-date">
+      </div>
+
+      <div class="block-label"><span class="zh">✅ 今日任務指派 Tasks Assigned</span><span class="en">✅ Tasks Assigned Today</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔機台周邊</span><span class="en">Clean around machine</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔地板</span><span class="en">Clean floors</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔工作檯面</span><span class="en">Clean workbenches</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充包裝袋</span><span class="en">Refill pouches</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充蓋子</span><span class="en">Refill lids</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">協助搬運成品托盤</span><span class="en">Assist moving finished trays</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">整理包裝材料</span><span class="en">Organise packaging materials</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score</span><span class="en">📊 Attitude Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d3-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 態度積極</span><span class="en">💪 Positive attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 主動問問題</span><span class="en">❓ Asked questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🐢 慢但認真</span><span class="en">🐢 Slow but genuine</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 被動等指示</span><span class="en">😐 Passive, waited for instructions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全意識弱</span><span class="en">⚠️ Safety awareness needs improvement</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🚩 態度需關注</span><span class="en">🚩 Attitude concern flagged</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">💬 訓練者備注 Trainer Notes</span><span class="en">💬 Trainer Notes</span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2" id="d3-notes"></textarea>
+
+      <!-- Phase 1 Decision -->
+      <div class="decision-box">
+        <div class="decision-title"><span class="zh">🔑 Phase 1 結束評估 (End of Phase 1 Decision)</span><span class="en">🔑 End of Phase 1 Decision</span></div>
+        <div class="decision-score" id="p1-score-display">Day 1–3 accumulated score: calculating…</div>
+        <div class="decision-options">
+          <label class="decision-option pass"><input type="radio" name="p1-decision"> ✅ <span class="zh">通過 PASS — 進入 Phase 2 正式培訓</span><span class="en">PASS — Proceed to Phase 2 formal training</span></label>
+          <label class="decision-option extend"><input type="radio" name="p1-decision"> ⏳ <span class="zh">延長觀察 EXTEND — 再觀察 1–2 天</span><span class="en">EXTEND — Observe 1–2 more days</span></label>
+          <label class="decision-option report"><input type="radio" name="p1-decision"> 🚩 <span class="zh">回報主管 REPORT — 立即向主管報告</span><span class="en">REPORT — Notify supervisor immediately</span></label>
+        </div>
+        <div class="block-label" style="margin-top:14px"><span class="zh">決策備注</span><span class="en">Decision Notes</span></div>
+        <textarea class="notes-area" placeholder="Explain decision reason..." rows="2"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PHASE 2 -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-phase2">
+    <div class="card">
+      <div class="section-heading"><span class="zh">🟡 Phase 2 — Support 角色培訓 (Day 4–7)</span><span class="en">🟡 Phase 2 — Support Role Training (Day 4–7)</span></div>
+      <div class="section-desc"><span class="zh">目標：在監督下輔助機台操作，建立基礎機台知識。所有操作需在訓練者陪同下進行，不允許新人獨立操作機台。</span><span class="en">Goal: Assist machine operation under supervision and build basic machine knowledge. All hands-on must be supervised. New hires must NOT operate independently.</span></div>
+
+      <!-- Day 4 -->
+      <div class="day-header">
+        <span class="day-badge">Day 4</span>
+        <input class="date-input" type="date" id="d4-date">
+      </div>
+
+      <div class="block-label"><span class="zh"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span> Training Content Covered</span><span class="en">✅ Training Content Covered Today</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score</span><span class="en">📊 Attitude Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d4-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
+      </div>
+      <div class="block-label"><span class="zh">💬 訓練者備注</span><span class="en">💬 Trainer Notes</span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
+
+      <hr>
+
+      <!-- Day 5 -->
+      <div class="day-header"><span class="day-badge">Day 5</span><input class="date-input" type="date" id="d5-date"></div>
+      <div class="block-label"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+      <div class="block-label"><span class="zh">📊 態度評分</span><span class="en">📊 Attitude Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d5-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+      <div class="block-label"><span class="zh">🏷️ 快速標籤</span><span class="en">🏷️ Quick Tags</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
+      </div>
+      <div class="block-label"><span class="zh">💬 備注</span><span class="en">💬 Notes</span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
+
+      <hr>
+
+      <!-- Day 6 -->
+      <div class="day-header"><span class="day-badge">Day 6</span><input class="date-input" type="date" id="d6-date"></div>
+      <div class="block-label"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+      <div class="block-label"><span class="zh">📊 態度評分</span><span class="en">📊 Attitude Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d6-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+      <div class="block-label"><span class="zh">🏷️ 快速標籤</span><span class="en">🏷️ Quick Tags</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
+      </div>
+      <div class="block-label"><span class="zh">💬 備注</span><span class="en">💬 Notes</span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
+
+      <hr>
+
+      <!-- Day 7 -->
+      <div class="day-header"><span class="day-badge">Day 7</span><input class="date-input" type="date" id="d7-date"></div>
+      <div class="block-label"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+      <div class="block-label"><span class="zh">📊 態度評分</span><span class="en">📊 Attitude Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d7-total">—/15</span></td></tr>
+        </tbody>
+      </table>
+      <div class="block-label"><span class="zh">🏷️ 快速標籤</span><span class="en">🏷️ Quick Tags</span></div>
+      <div class="tag-list">
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
+        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
+      </div>
+      <div class="block-label"><span class="zh">💬 備注</span><span class="en">💬 Notes</span></div>
+      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
+
+      <!-- Phase 2 Decision -->
+      <div class="decision-box">
+        <div class="decision-title"><span class="zh">🔑 Phase 2 結束評估 (End of Phase 2 Decision)</span><span class="en">🔑 End of Phase 2 Decision</span></div>
+        <div class="decision-score" id="p2-score-display">Day 4–7 accumulated score: calculating…</div>
+        <div class="decision-options">
+          <label class="decision-option pass"><input type="radio" name="p2-decision"> ✅ <span class="zh">進入 Phase 3 PROCEED — 整體表現穩定</span><span class="en">PROCEED to Phase 3 — Overall performance stable</span></label>
+          <label class="decision-option extend"><input type="radio" name="p2-decision"> ⏳ <span class="zh">延長 Phase 2 EXTEND — 需多一週觀察</span><span class="en">EXTEND Phase 2 — Needs one more week</span></label>
+          <label class="decision-option report"><input type="radio" name="p2-decision"> 🚩 <span class="zh">回報主管 REPORT — 需主管介入</span><span class="en">REPORT — Supervisor intervention required</span></label>
+        </div>
+        <div class="block-label" style="margin-top:14px"><span class="zh">決策備注</span><span class="en">Decision Notes</span></div>
+        <textarea class="notes-area" rows="2" placeholder="Explain decision reason..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- PHASE 3 -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-phase3">
+    <div class="card">
+      <div class="section-heading"><span class="zh">🔴 Phase 3 — Full Operation (Week 2+)</span><span class="en">🔴 Phase 3 — Full Operation (Week 2+)</span></div>
+      <div class="section-desc"><span class="zh">目標：逐步建立獨立操作能力，包含異常處理與交班溝通。</span><span class="en">Goal: Build independent operation capability, including fault response and shift handover communication.</span></div>
+
+      <div class="day-header">
+        <span class="day-badge">Week 2</span>
+        <input class="date-input" type="date" placeholder="Start date"> &nbsp;–&nbsp;
+        <input class="date-input" type="date" placeholder="End date">
+      </div>
+
+      <div class="block-label"><span class="zh">✅ 本週教學內容</span><span class="en">✅ This Week's Training Content</span></div>
+      <div class="check-list">
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">完整機台操作流程</span><span class="en">Full machine operation flow</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">換產品操作</span><span class="en">Product changeover procedure</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">調整設定</span><span class="en">Settings adjustment</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">常見異常判斷與回報</span><span class="en">Identify and report common faults</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">高風險操作安全規範</span><span class="en">Safety rules for high-risk operations</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">如何查閱 Setting Record</span><span class="en">How to use Setting Record</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">交班溝通基本要求</span><span class="en">Shift handover communication</span></label>
+        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
+      </div>
+
+      <div class="block-label"><span class="zh">📊 本週綜合評分</span><span class="en">📊 Weekly Summary Score</span></div>
+      <table class="score-table">
+        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr><td><span class="zh">操作能力</span><span class="en">Operation Skill</span></td><td style="color:var(--text2)"><span class="zh">操作準確度與穩定度</span><span class="en">Accuracy and consistency of machine operation</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr><td><span class="zh">問題應對</span><span class="en">Problem Response</span></td><td style="color:var(--text2)"><span class="zh">遇異常能正確回報</span><span class="en">Correctly reports faults when they occur</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
+          <tr class="score-total-row"><td colspan="2"><span class="zh">本週總分</span><span class="en">Weekly Total</span></td><td><span class="score-total-badge" id="w2-total">—/21</span></td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">💬 本週重點觀察</span><span class="en">💬 Key Observations This Week</span></div>
+      <textarea class="notes-area" placeholder="Record key observations, progress and issues this week..." rows="4"></textarea>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ -->
+  <!-- MANAGEMENT SUMMARY -->
+  <!-- ══════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-summary">
+    <div class="card">
+      <div class="section-heading"><span class="zh">📄 Management Summary — 訓練總結報告</span><span class="en">📄 Management Summary — Training Report</span></div>
+      <div class="section-desc"><span class="zh">訓練期結束後填寫此欄，交給主管確認簽署。可列印此頁面作為正式紀錄。</span><span class="en">Fill in this section at the end of the training period and hand to your supervisor for sign-off. This page can be printed as an official record.</span></div>
+
+      <div class="block-label"><span class="zh">基本資訊</span><span class="en">Basic Information</span></div>
+      <table class="summary-table" style="margin-bottom:16px">
+        <tr><td width="180">Trainee Name</td><td><input type="text" placeholder="Trainee name" id="sum-trainee"></td></tr>
+        <tr><td>Trainer Name</td><td><input type="text" placeholder="Trainer name" id="sum-trainer"></td></tr>
+        <tr><td>Machine / Line</td><td><input type="text" placeholder="Machine / Line" id="sum-machine"></td></tr>
+        <tr><td>Training Period</td><td><input type="text" placeholder="2026-07-09 to 2026-07-20"></td></tr>
+        <tr><td>Total Training Days</td><td><input type="text" placeholder="No. of days"></td></tr>
+      </table>
+
+      <div class="block-label"><span class="zh">階段進展 Phase Progression</span><span class="en">Phase Progression</span></div>
+      <table class="summary-table" style="margin-bottom:16px">
+        <thead><tr><th>Phase</th><th>Dates</th><th width="200">Outcome</th></tr></thead>
+        <tbody>
+          <tr><td>Phase 1 — Attitude Observation (Day 1–3)</td><td><input type="text" placeholder="Date"></td><td><select style="width:100%;border:none;background:transparent;font-size:13px"><option>— Select —</option><option>✅ Pass</option><option>⏳ Extended</option><option>🚩 Reported to Supervisor</option></select></td></tr>
+          <tr><td>Phase 2 — Support Role (Day 4–7)</td><td><input type="text" placeholder="Date"></td><td><select style="width:100%;border:none;background:transparent;font-size:13px"><option>— Select —</option><option>✅ Pass</option><option>⏳ Extended</option><option>🚩 Reported to Supervisor</option></select></td></tr>
+          <tr><td>Phase 3 — Full Operation (Week 2+)</td><td><input type="text" placeholder="Date"></td><td><select style="width:100%;border:none;background:transparent;font-size:13px"><option>— Select —</option><option>✅ Ready</option><option>⏳ In Progress</option><option>🚩 Reported to Supervisor</option></select></td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">分數總覽 Overall Score Summary</span><span class="en">Overall Score Summary</span></div>
+      <table class="summary-table" style="margin-bottom:16px">
+        <thead><tr><th>Period</th><th width="100">Score</th><th width="80">Max</th></tr></thead>
+        <tbody>
+          <tr><td>Phase 1 (Day 1–3)</td><td><span id="sum-p1">—</span></td><td>/45</td></tr>
+          <tr><td>Phase 2 (Day 4–7)</td><td><span id="sum-p2">—</span></td><td>/60</td></tr>
+          <tr><td>Phase 3 (Week 2)</td><td><span id="sum-p3">—</span></td><td>/21</td></tr>
+          <tr style="font-weight:600;background:var(--surface)"><td>Grand Total</td><td><span id="sum-total">—</span></td><td>/126</td></tr>
+        </tbody>
+      </table>
+
+      <div class="block-label"><span class="zh">訓練者總體評估</span><span class="en">Trainer's Overall Assessment</span></div>
+      <textarea class="notes-area" rows="5" placeholder="3–5 sentences: strengths, areas for improvement, recommended next step..."></textarea>
+
+      <div class="block-label" style="margin-top:16px"><span class="zh">建議下一步</span><span class="en">Recommended Next Step</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="decision-option pass"><input type="radio" name="final-decision"> ✅ <span class="zh">已可獨立操作，不需進一步監督</span><span class="en">Ready for independent operation — no further supervision required</span></label>
+        <label class="decision-option extend"><input type="radio" name="final-decision"> 🔁 <span class="zh">繼續監督下操作 _______ 週</span><span class="en">Continue supervised operation for another _______ week(s)</span></label>
+        <label class="decision-option"><input type="radio" name="final-decision"> ⚠️ <span class="zh">僅擔任 support 赤 — 尚未準備好獨立操作</span><span class="en">Assign to support role only — not yet ready for independent operation</span></label>
+        <label class="decision-option report"><input type="radio" name="final-decision"> 🚩 <span class="zh">需進一步處理 — 請參考上方備注</span><span class="en">Further action required — see notes above</span></label>
+      </div>
+
+      <hr>
+      <table class="summary-table">
+        <thead><tr><th></th><th>Signature</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td><span class="zh">訓練者 Trainer</span><span class="en">Trainer</span></td><td><input type="text" placeholder="Sign here"></td><td><input type="date"></td></tr>
+          <tr><td><span class="zh">主管 Supervisor</span><span class="en">Supervisor</span></td><td><input type="text" placeholder="Sign here"></td><td><input type="date"></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div class="print-bar">
+  <button class="btn btn-secondary" style="background:var(--surface2);color:var(--text2);font-size:12px" onclick="clearData()"><span class="zh">🗑 清除</span><span class="en">🗑 Clear</span></button>
+  <button class="btn btn-secondary" onclick="window.print()"><span class="zh">🖨️ 列印</span><span class="en">🖨️ Print</span></button>
+  <button class="btn btn-secondary" onclick="syncSummary()"><span class="zh">📊 更新分數</span><span class="en">📊 Update Scores</span></button>
+  <button class="btn btn-secondary" onclick="exportReport()"><span class="zh">📥 匯出報告</span><span class="en">📥 Export Report</span></button>
+  <button class="btn btn-primary" style="background:var(--green)" onclick="submitToSheets()"><span class="zh">☁️ 送出記錄</span><span class="en">☁️ Submit Record</span></button>
+</div>
+
+<script>
+  /* ── Tabs ── */
+  function switchTab(id) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    document.getElementById('tab-' + id).classList.add('active');
+  }
+
+  /* ── Checkbox styling ── */
+  function styleCheck(el) {
+    el.closest('.check-item, .tag-item').classList.toggle('checked', el.checked);
+  }
+
+  /* ── Score calculation ── */
+  const dayMaxes = { d1:15, d2:15, d3:15, d4:15, d5:15, d6:15, d7:15, w2:21 };
+
+  function calcScore(prefix) {
+    const panel = document.getElementById('panel-' +
+      (['d1','d2','d3'].includes(prefix) ? 'phase1' :
+       ['d4','d5','d6','d7'].includes(prefix) ? 'phase2' : 'phase3'));
+    const selects = [...panel.querySelectorAll('.score-select')].filter(s => {
+      // find selects in same day block
+      return s.closest('table').previousElementSibling?.textContent.includes('📊') ||
+             s.closest('table').previousElementSibling?.id === prefix + '-label';
+    });
+    // just grab all selects in the matching score table via day index
+    const allTables = panel.querySelectorAll('.score-table');
+    const dayIdx = ['d1','d2','d3','d4','d5','d6','d7','w2'].indexOf(prefix);
+    const dayWithinPhase = ['d1','d2','d3'].includes(prefix) ? dayIdx :
+                           ['d4','d5','d6','d7'].includes(prefix) ? dayIdx - 3 : 0;
+    const table = allTables[dayWithinPhase];
+    if (!table) return;
+    const vals = [...table.querySelectorAll('.score-select')].map(s => parseInt(s.value) || 0);
+    const total = vals.reduce((a,b) => a+b, 0);
+    const badge = document.getElementById(prefix + '-total');
+    if (!badge) return;
+    badge.textContent = total + '/' + dayMaxes[prefix];
+    const max = dayMaxes[prefix];
+    badge.className = 'score-total-badge';
+    if (total >= max * 0.8) badge.classList.add('good');
+    else if (total >= max * 0.5) badge.classList.add('mid');
+    else if (total > 0) badge.classList.add('low');
+    updatePhaseScores();
+  }
+
+  function updatePhaseScores() {
+    // P1
+    const p1 = getPhaseTotal(['d1','d2','d3']);
+    const p1El = document.getElementById('p1-score-display');
+    if (p1El) p1El.textContent = `Day 1–3 accumulated score: ${p1} / 45 ${ p1 >= 36 ? '✅ Pass' : p1 >= 24 ? '⏳ Extend' : p1 > 0 ? '🚩 Report' : '' }`;
+    // P2
+    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
+    const p2El = document.getElementById('p2-score-display');
+    if (p2El) p2El.textContent = `Day 4–7 累計總分：${p2} / 60 ${ p2 >= 48 ? '✅ Pass' : p2 >= 32 ? '⏳ Extend' : p2 > 0 ? '🚩 Report' : '' }`;
+  }
+
+  function getPhaseTotal(days) {
+    return days.reduce((acc, prefix) => {
+      const panel = document.getElementById('panel-' +
+        (['d1','d2','d3'].includes(prefix) ? 'phase1' : 'phase2'));
+      const allTables = panel.querySelectorAll('.score-table');
+      const dayIdx = ['d1','d2','d3'].includes(prefix) ?
+        ['d1','d2','d3'].indexOf(prefix) : ['d4','d5','d6','d7'].indexOf(prefix);
+      const table = allTables[dayIdx];
+      if (!table) return acc;
+      const vals = [...table.querySelectorAll('.score-select')].map(s => parseInt(s.value)||0);
+      return acc + vals.reduce((a,b)=>a+b,0);
+    }, 0);
+  }
+
+  function syncSummary() {
+    const p1 = getPhaseTotal(['d1','d2','d3']);
+    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
+    // w2
+    const w2Panel = document.getElementById('panel-phase3');
+    const w2Table = w2Panel.querySelector('.score-table');
+    const w2vals = w2Table ? [...w2Table.querySelectorAll('.score-select')].map(s=>parseInt(s.value)||0) : [];
+    const p3 = w2vals.reduce((a,b)=>a+b,0);
+    const grand = p1+p2+p3;
+    document.getElementById('sum-p1').textContent = p1;
+    document.getElementById('sum-p2').textContent = p2;
+    document.getElementById('sum-p3').textContent = p3;
+    document.getElementById('sum-total').textContent = grand;
+    // also sync trainee/trainer name from top
+    const tn = document.getElementById('trainee-name')?.value;
+    const tr = document.getElementById('trainer-name')?.value;
+    if (tn) document.getElementById('sum-trainee').value = tn;
+    if (tr) document.getElementById('sum-trainer').value = tr;
+    switchTab('summary');
+  }
+
+
+  /* ── Language toggle ── */
+  let currentLang = localStorage.getItem('ui-lang') || 'zh';
+  function applyLang(lang) {
+    document.documentElement.lang = lang;
+    currentLang = lang;
+    localStorage.setItem('ui-lang', lang);
+    const btn = document.getElementById('lang-toggle');
+    if (btn) btn.textContent = lang === 'zh' ? '🌐 English' : '🌐 中文';
+  }
+  function toggleLang() { applyLang(currentLang === 'zh' ? 'en' : 'zh'); }
+  applyLang(currentLang);
+
+  // init score display
+  updatePhaseScores();
+
+  /* ── AUTO-SAVE to localStorage ── */
+  const SAVE_KEY = 'training-log-v1';
+
+  function getAllFormData() {
+    const data = {};
+    document.querySelectorAll('input, select, textarea').forEach((el, i) => {
+      const key = el.id || el.name || ('el_' + i);
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        data[key + '_' + i] = el.checked;
+      } else {
+        data[key + '_' + i] = el.value;
+      }
+    });
+    return data;
+  }
+
+  function restoreFormData() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+      if (!saved) return;
+      document.querySelectorAll('input, select, textarea').forEach((el, i) => {
+        const key = el.id || el.name || ('el_' + i);
+        const val = saved[key + '_' + i];
+        if (val === undefined) return;
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = val;
+          const parent = el.closest('.check-item, .tag-item, .decision-option');
+          if (parent) parent.classList.toggle('checked', val);
+        } else {
+          el.value = val;
+        }
+      });
+      updatePhaseScores();
+      // recalc all day scores
+      ['d1','d2','d3','d4','d5','d6','d7','w2'].forEach(calcScore);
+      showToast('✅ Previous data restored');
+    } catch(e) {}
+  }
+
+  function saveNow() {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(getAllFormData()));
+  }
+
+  // Auto-save on any change
+  document.addEventListener('change', saveNow);
+  document.addEventListener('input', saveNow);
+
+  // Restore on load
+  window.addEventListener('load', restoreFormData);
+
+  /* ── EXPORT as text report ── */
+  function exportReport() {
+    const trainee = document.getElementById('trainee-name')?.value || '(blank)';
+    const trainer = document.getElementById('trainer-name')?.value || '(blank)';
+    const machine = document.getElementById('machine-line')?.value || '(blank)';
+    const shift   = document.getElementById('shift')?.value || '(blank)';
+    const startDate = document.getElementById('start-date')?.value || '(blank)';
+
+    const p1 = getPhaseTotal(['d1','d2','d3']);
+    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
+    const w2Panel = document.getElementById('panel-phase3');
+    const w2Table = w2Panel?.querySelector('.score-table');
+    const p3 = w2Table ? [...w2Table.querySelectorAll('.score-select')].map(s=>parseInt(s.value)||0).reduce((a,b)=>a+b,0) : 0;
+    const grand = p1+p2+p3;
+
+    const p1Decision = document.querySelector('input[name="p1-decision"]:checked')?.closest('label')?.textContent?.trim() || '(not selected)';
+    const p2Decision = document.querySelector('input[name="p2-decision"]:checked')?.closest('label')?.textContent?.trim() || '(not selected)';
+    const finalDec   = document.querySelector('input[name="final-decision"]:checked')?.closest('label')?.textContent?.trim() || '(not selected)';
+
+    // Collect notes by textarea order
+    const notes = [...document.querySelectorAll('textarea')].map((t,i) => t.value.trim()).filter(Boolean);
+
+    // Checked task items
+    function getCheckedItems(panelId) {
+      return [...document.getElementById(panelId).querySelectorAll('.check-item input:checked')]
+        .map(el => el.closest('.check-item').textContent.trim()).join(', ');
+    }
+    function getCheckedTags(panelId) {
+      return [...document.getElementById(panelId).querySelectorAll('.tag-item input:checked')]
+        .map(el => el.closest('.tag-item').textContent.trim()).join('  ');
+    }
+
+    const sep = '─'.repeat(50);
+    let report = `MACHINE OPERATOR TRAINING LOG
+${sep}
+Trainee      : ${trainee}
+Trainer      : ${trainer}
+Machine      : ${machine}
+Shift        : ${shift}
+Start Date   : ${startDate}
+${sep}
+
+[ Phase 1 — Attitude Observation (Day 1–3) ]
+`;
+    ['d1','d2','d3'].forEach((d, i) => {
+      const dateVal = document.getElementById(d+'-date')?.value || '';
+      const score = document.getElementById(d+'-total')?.textContent || '–';
+      const noteEl = document.querySelectorAll('textarea')[i];
+      const note = noteEl?.value?.trim() || '';
+      report += `  Day ${i+1} (${dateVal}) : Score ${score}\n`;
+      if (note) report += `    Note: ${note}\n`;
+    });
+    report += `  Phase 1 Total: ${p1}/45\n  Phase 1 Decision: ${p1Decision}\n\n`;
+
+    report += `[ Phase 2 — Support Role Training (Day 4–7) ]\n`;
+    ['d4','d5','d6','d7'].forEach((d, i) => {
+      const dateVal = document.getElementById(d+'-date')?.value || '';
+      const score = document.getElementById(d+'-total')?.textContent || '–';
+      const noteEl = document.querySelectorAll('textarea')[3+i];
+      const note = noteEl?.value?.trim() || '';
+      report += `  Day ${i+4} (${dateVal}) : Score ${score}\n`;
+      if (note) report += `    Note: ${note}\n`;
+    });
+    report += `  Phase 2 Total: ${p2}/60\n  Phase 2 Decision: ${p2Decision}\n\n`;
+
+    report += `[ Phase 3 — Full Operation (Week 2+) ]\n  Week 2 Total: ${p3}/21\n\n`;
+
+    report += `${sep}\n[ Overall Score Summary ]\n  Phase 1 : ${p1}/45\n  Phase 2 : ${p2}/60\n  Phase 3 : ${p3}/21\n  Grand Total : ${grand}/126\n\n  <span class="zh">Recommended Next Step: ${finalDec}\n${sep}\n`;
+
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Training-Log_${trainee.replace(/\s+/g,'-')}_${startDate || 'export'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📥 Report downloaded!');
+  }
+
+  /* ── SUBMIT to Google Sheets ── */
+  // ★ 步驟3：把你的 Apps Script 網址貼到下面這行
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwlKAd_ezGH0WMwsaby08vH0Xfnszj7rDyYDLaEO2Z4z2Mi83Imj9VJwqIHqjkg3_wVgA/exec';
+
+  async function submitToSheets() {
+    if (SHEET_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+      showToast('❌ Please set the Apps Script URL in the HTML first!');
+      return;
+    }
+    const trainee   = document.getElementById('trainee-name')?.value || '';
+    const trainer   = document.getElementById('trainer-name')?.value || '';
+    const machine   = document.getElementById('machine-line')?.value || '';
+    const shift     = document.getElementById('shift')?.value || '';
+    const startDate = document.getElementById('start-date')?.value || '';
+
+    if (!trainee || !trainer) {
+      showToast('⚠️ Please fill in Trainee Name and Trainer Name first!');
+      return;
+    }
+
+    const p1 = getPhaseTotal(['d1','d2','d3']);
+    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
+    const w2Panel = document.getElementById('panel-phase3');
+    const w2Table = w2Panel?.querySelector('.score-table');
+    const p3 = w2Table ? [...w2Table.querySelectorAll('.score-select')].map(s=>parseInt(s.value)||0).reduce((a,b)=>a+b,0) : 0;
+    const grand = p1 + p2 + p3;
+
+    const dayScores = {};
+    ['d1','d2','d3','d4','d5','d6','d7'].forEach((d, i) => {
+      dayScores['day'+(i+1)+'_date']  = document.getElementById(d+'-date')?.value || '';
+      dayScores['day'+(i+1)+'_score'] = document.getElementById(d+'-total')?.textContent || '';
+    });
+
+    const textareas = [...document.querySelectorAll('textarea')];
+    const dayNotes = {};
+    ['d1','d2','d3','d4','d5','d6','d7'].forEach((d, i) => {
+      dayNotes['day'+(i+1)+'_note'] = textareas[i]?.value?.trim() || '';
+    });
+    const overallNote = textareas[7]?.value?.trim() || '';
+
+    const p1Decision    = document.querySelector('input[name="p1-decision"]:checked')?.closest('label')?.textContent?.trim() || '';
+    const p2Decision    = document.querySelector('input[name="p2-decision"]:checked')?.closest('label')?.textContent?.trim() || '';
+    const finalDecision = document.querySelector('input[name="final-decision"]:checked')?.closest('label')?.textContent?.trim() || '';
+
+    const payload = {
+      submitted_at:   new Date().toLocaleString('zh-TW', {timeZone:'Australia/Melbourne'}),
+      trainee_name:   trainee,
+      trainer_name:   trainer,
+      machine_line:   machine,
+      shift:          shift,
+      start_date:     startDate,
+      ...dayScores,
+      ...dayNotes,
+      phase1_total:   p1 + '/45',
+      phase2_total:   p2 + '/60',
+      phase3_total:   p3 + '/21',
+      grand_total:    grand + '/126',
+      p1_decision:    p1Decision,
+      p2_decision:    p2Decision,
+      final_decision: finalDecision,
+      overall_note:   overallNote
+    };
+
+    showToast('⏳ Submitting...');
+    try {
+      const res = await fetch(SHEET_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json.result === 'success') {
+        showToast('✅ Record submitted to Google Sheets!');
+      } else {
+        showToast('❌ Submit failed: ' + (json.error || 'Unknown error'));
+      }
+    } catch(e) {
+      showToast('❌ Network error. Please check your connection and try again.');
+      console.error(e);
+    }
+  }
+
+  /* ── CLEAR data ── */
+  function clearData() {
+    if (!confirm('確定要清除所有已填寫的資料嗎？\n(此動作無法復原)')) return;
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  }
+
+  /* ── Toast notification ── */
+  function showToast(msg) {
+    let t = document.getElementById('toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toast';
+      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2C2C2B;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+  }
+</script>
+
+</body>
+</html>
