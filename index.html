@@ -1087,7 +1087,7 @@
       // ══════════════════════════════════════════
       const ATTITUDE_ITEMS = [
         { key: 'initiative',  en: 'Initiative',       zh: '積極度',   descEn: 'No idle standing; actively finds work', descZh: '不閒站、主動找事做' },
-        { key: 'proactive_q', en: 'Proactive Q',      zh: '主動詢問', descEn: 'Asks when unsure', descZh: '遇到不懂會主動發問' },
+        { key: 'proactive_q', en: 'Proactive Q',      zh: '主動詢問', descEn: 'Asks when unsure', descZh: '遇到不懂會主動���問' },
         { key: 'task_accept', en: 'Task Acceptance',  zh: '接受指派', descEn: 'Positive attitude for difficult tasks', descZh: '分配到辛苦任務態度正面' },
         { key: 'reliability', en: 'Reliability',      zh: '可靠度',   descEn: 'Completes assigned tasks', descZh: '交辦任務有確實完成' },
         { key: 'safety',      en: 'Safety Awareness', zh: '安全意識', descEn: 'Follows hygiene & safety rules', descZh: '遵守衛生與安全規範' },
@@ -1529,10 +1529,27 @@
         calcScores();
       }
 
-      // ══════════════════════════════════════════
+      // ══════════���═══════════════════════════════
       // MODE: NEW / LOAD
       // ══════════════════════════════════════════
       function setMode(mode) {
+        // ✅ 切換到 New 模式前，如果目前有資料（正在編輯或輸入中）則警告並詢問是否清空
+        if (mode === 'new') {
+          const hasData = document.getElementById('trainee_name').value.trim() !== '' ||
+                          document.getElementById('trainer_name').value.trim() !== '' ||
+                          document.querySelector('input[type="radio"]:checked') !== null;
+          if (hasData) {
+            const confirmed = confirm(
+              '⚠️ Start a new trainee record?\n\n' +
+              'All current form data (including scores) will be cleared.\n' +
+              'Make sure you have submitted the current record before switching.\n\n' +
+              'Click OK to clear and start fresh, or Cancel to keep the current data.'
+            );
+            if (!confirmed) return; // 使用者選「取消」則不做任何動作
+            resetForm();            // 使用者選「確定」則清空表單
+          }
+        }
+
         currentMode = mode;
         document.getElementById('btn-new').classList.toggle('active', mode==='new');
         document.getElementById('btn-load').classList.toggle('active', mode==='load');
