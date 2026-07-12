@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Supervisor Training Dashboard</title>
+<style>
+  :root {
+    --blue: #2783DE; --blue-soft: #E5F2FC;
+    --green: #46A171; --green-soft: #E8F1EC;
+    --orange: #D5803B; --orange-soft: #FBEBDE;
+    --red: #E56458; --red-soft: #FCE9E7;
+    --purple: #7B5EA7; --purple-soft: #EDE8F5;
+    --text: #2C2C2B; --text2: #7D7A75;
+    --canvas: #FFFFFF; --surface: #F9F8F7; --surface2: #F0EFED;
+    --border: #E6E5E3; --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; color: var(--text); background: var(--surface); }
+
+  /* HEADER */
+  .header { background: var(--canvas); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header-left h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+  .header-left .sub { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .lang-toggle { display: flex; background: var(--surface2); border-radius: 20px; padding: 2px; }
+  .nav-back-btn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-weight: 600; color: var(--text2); text-decoration: none; transition: all 0.15s; }
+  .nav-back-btn:hover { background: var(--border); color: var(--text); }
+  .nav-to-dash { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: var(--blue-soft); border: 1px solid #b0d4f3; border-radius: var(--radius); font-size: 13px; font-weight: 600; color: var(--blue); text-decoration: none; transition: all 0.15s; }
+  .nav-to-dash:hover { background: #cfe5f7; }
+  .lang-btn { padding: 5px 14px; border-radius: 18px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text2); transition: all 0.15s; }
+  .lang-btn.active { background: var(--canvas); color: var(--blue); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .date-badge { font-size: 12px; color: var(--text2); background: var(--surface2); padding: 5px 12px; border-radius: 20px; }
+
+  /* MAIN */
+  .main { max-width: 1100px; margin: 0 auto; padding: 32px 32px 64px; }
+
+  /* SECTION TITLE */
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 14px; }
+
+  /* ── SECTION 1: FUNNEL ── */
+  .funnel-row { display: flex; align-items: stretch; gap: 0; margin-bottom: 32px; background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .funnel-step { flex: 1; padding: 24px 20px; border-right: 1px solid var(--border); position: relative; }
+  .funnel-step:last-child { border-right: none; }
+  .funnel-step .step-icon { font-size: 28px; margin-bottom: 8px; }
+  .funnel-step .step-num { font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+  .funnel-step .step-label { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .funnel-step .step-desc { font-size: 12px; color: var(--text2); }
+  .funnel-step .step-arrow { position: absolute; right: -14px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: var(--canvas); border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text2); z-index: 2; }
+  .funnel-step:last-child .step-arrow { display: none; }
+  .funnel-blue { border-top: 3px solid var(--blue); }
+  .funnel-green { border-top: 3px solid var(--green); }
+  .funnel-orange { border-top: 3px solid var(--orange); }
+  .funnel-purple { border-top: 3px solid var(--purple); }
+  .funnel-red { border-top: 3px solid var(--red); }
+  .step-num.blue { color: var(--blue); }
+  .step-num.green { color: var(--green); }
+  .step-num.orange { color: var(--orange); }
+  .step-num.purple { color: var(--purple); }
+  .step-num.red { color: var(--red); }
+
+  /* OUTCOME TAGS */
+  .outcome-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px; }
+  .outcome-tag { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--canvas); font-size: 13px; font-weight: 600; }
+  .outcome-tag .ot-count { font-size: 22px; font-weight: 800; min-width: 30px; }
+  .ot-ops { color: var(--green); border-color: #b8ddc8; background: var(--green-soft); }
+  .ot-redeploy { color: var(--purple); border-color: #cfc3e8; background: var(--purple-soft); }
+  .ot-pkg { color: var(--orange); border-color: #e8c9a0; background: var(--orange-soft); }
+  .ot-prog { color: var(--blue); border-color: #b0d4f3; background: var(--blue-soft); }
+  .ot-exit { color: var(--red); border-color: #f0b9b4; background: var(--red-soft); }
+
+  /* ── SECTION 2: PASS RATE BARS ── */
+  .pass-rate-card { background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 32px; }
+  .pass-rate-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .pass-rate-row:last-child { margin-bottom: 0; }
+  .pr-label { width: 160px; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .pr-bar-wrap { flex: 1; height: 12px; background: var(--surface2); border-radius: 6px; overflow: hidden; }
+  .pr-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; }
+  .pr-pct { width: 48px; text-align: right; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .pr-count { width: 64px; text-align: right; font-size: 12px; color: var(--text2); flex-shrink: 0; }
+
+  /* ── SECTION 3: TIMELINE GRID ── */
+  .timeline-card { background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 32px; }
+  .timeline-header { display: grid; grid-template-columns: 160px repeat(8, 1fr) 140px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .th-cell { padding: 10px 8px; font-size: 11px; font-weight: 700; text-align: center; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; border-right: 1px solid var(--border); }
+  .th-cell:last-child { border-right: none; }
+  .th-cell.phase-1 { background: #EBF4FF; color: var(--blue); }
+  .th-cell.phase-2 { background: #FEF4EA; color: var(--orange); }
+  .th-cell.phase-3 { background: #FAEAEA; color: var(--red); }
+  .th-name { text-align: left; padding-left: 16px; }
+  .timeline-row { display: grid; grid-template-columns: 160px repeat(8, 1fr) 140px; border-bottom: 1px solid var(--border); }
+  .timeline-row:last-child { border-bottom: none; }
+  .timeline-row:hover { background: var(--surface); }
+  .tr-name { padding: 12px 16px; font-size: 13px; font-weight: 700; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; }
+  .tr-name .tr-sub { font-size: 11px; font-weight: 400; color: var(--text2); margin-top: 1px; }
+  .tr-cell { padding: 10px 6px; display: flex; align-items: center; justify-content: center; border-right: 1px solid var(--border); font-size: 16px; }
+  .tr-cell:last-child { border-right: none; }
+  .tr-outcome { padding: 10px 12px; display: flex; align-items: center; justify-content: center; }
+  .outcome-pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-align: center; white-space: nowrap; }
+  .pill-ops { background: var(--green-soft); color: var(--green); }
+  .pill-redeploy { background: var(--purple-soft); color: var(--purple); }
+  .pill-pkg { background: var(--orange-soft); color: var(--orange); }
+  .pill-prog { background: var(--blue-soft); color: var(--blue); }
+  .pill-exit { background: var(--red-soft); color: var(--red); }
+
+  /* PHASE HEADER SPAN */
+  .phase-span-header { display: grid; grid-template-columns: 160px 3fr 4fr 1fr 140px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .ph-cell { padding: 6px 8px; font-size: 10px; font-weight: 700; text-align: center; letter-spacing: 0.5px; text-transform: uppercase; border-right: 1px solid var(--border); }
+  .ph-cell:last-child { border-right: none; }
+  .ph-empty { background: var(--surface); }
+  .ph-p1 { background: #EBF4FF; color: var(--blue); }
+  .ph-p2 { background: #FEF4EA; color: var(--orange); }
+  .ph-p3 { background: #FAEAEA; color: var(--red); }
+
+  /* SCORE BAR LIST */
+  .score-list-card { background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 32px; }
+  .score-list-header { display: grid; grid-template-columns: 160px 1fr 100px 100px; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); }
+  .score-list-row { display: grid; grid-template-columns: 160px 1fr 100px 100px; padding: 14px 16px; border-bottom: 1px solid var(--border); align-items: center; }
+  .score-list-row:last-child { border-bottom: none; }
+  .score-list-row:hover { background: var(--surface); }
+  .sl-name { font-size: 14px; font-weight: 700; }
+  .sl-name .sl-machine { font-size: 11px; font-weight: 400; color: var(--text2); }
+  .sl-bar-wrap { position: relative; height: 10px; background: var(--surface2); border-radius: 5px; overflow: visible; margin: 0 8px; }
+  .sl-bar-fill { height: 100%; border-radius: 5px; }
+  .sl-score { font-size: 13px; font-weight: 700; text-align: right; }
+  .sl-outcome { text-align: right; }
+
+  /* DIVIDER */
+  .section-divider { border: none; border-top: 1px solid var(--border); margin: 0 0 32px; }
+
+  /* KEY INSIGHT */
+  .insight-box { background: linear-gradient(135deg, #EBF4FF 0%, #EDE8F5 100%); border: 1px solid #c2d8f5; border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 32px; display: flex; gap: 16px; align-items: flex-start; }
+  .insight-icon { font-size: 32px; flex-shrink: 0; }
+  .insight-title { font-size: 15px; font-weight: 800; color: var(--blue); margin-bottom: 6px; }
+  .insight-text { font-size: 14px; color: #2c4a6e; line-height: 1.6; }
+
+  /* FOOTER */
+  .footer { text-align: center; padding: 24px; font-size: 12px; color: var(--text2); }
+
+  @media (max-width: 900px) {
+    .funnel-row { flex-direction: column; }
+    .funnel-step { border-right: none; border-bottom: 1px solid var(--border); }
+    .funnel-step .step-arrow { display: none; }
+    .main { padding: 20px 16px 48px; }
+    .header { padding: 16px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>👔 <span id="hd-title">Supervisor Training Dashboard</span></h1>
+    <div class="sub" id="hd-sub">Machine Operator New Hire Programme · Yang Factory</div>
+  </div>
+  <div class="header-right">
+    <a href="./index.html" class="nav-back-btn" id="nav-back">&#8592; <span id="nav-back-lbl">Training Log</span></a>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('en')" id="lb-en">EN</button>
+      <button class="lang-btn" onclick="setLang('zh')" id="lb-zh">中文</button>
+    </div>
+    <div class="date-badge" id="date-badge">Loading...</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ── SECTION 1: TALENT FUNNEL ── -->
+  <div class="section-label" id="sl-funnel">TALENT FUNNEL — CURRENT COHORT</div>
+  <div class="funnel-row">
+    <div class="funnel-step funnel-blue">
+      <div class="step-icon">🏭</div>
+      <div class="step-num blue" id="fn-intake">6</div>
+      <div class="step-label" id="fn-intake-lbl">Intake</div>
+      <div class="step-desc" id="fn-intake-desc">New hires this cycle</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="funnel-step funnel-green">
+      <div class="step-icon">✅</div>
+      <div class="step-num green" id="fn-p1">5</div>
+      <div class="step-label" id="fn-p1-lbl">Passed Phase 1</div>
+      <div class="step-desc" id="fn-p1-desc">Attitude observation</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="funnel-step funnel-orange">
+      <div class="step-icon">🔧</div>
+      <div class="step-num orange" id="fn-p2">4</div>
+      <div class="step-label" id="fn-p2-lbl">Passed Phase 2</div>
+      <div class="step-desc" id="fn-p2-desc">Support role training</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="funnel-step funnel-purple">
+      <div class="step-icon">⭐</div>
+      <div class="step-num purple" id="fn-p3">2</div>
+      <div class="step-label" id="fn-p3-lbl">Ops Ready / Redeploy</div>
+      <div class="step-desc" id="fn-p3-desc">Full assessment complete</div>
+      <div class="step-arrow">→</div>
+    </div>
+    <div class="funnel-step funnel-red">
+      <div class="step-icon">🚪</div>
+      <div class="step-num red" id="fn-exit">1</div>
+      <div class="step-label" id="fn-exit-lbl">Released</div>
+      <div class="step-desc" id="fn-exit-desc">Not retained</div>
+    </div>
+  </div>
+
+  <!-- OUTCOME TAGS -->
+  <div class="outcome-row">
+    <div class="outcome-tag ot-ops"><span class="ot-count">2</span><div><div id="ot-ops-lbl">🏭 Ops Ready</div><div style="font-size:11px;font-weight:400;margin-top:1px" id="ot-ops-desc">Independent operation</div></div></div>
+    <div class="outcome-tag ot-redeploy"><span class="ot-count">1</span><div><div id="ot-rd-lbl">⭐ Redeploy</div><div style="font-size:11px;font-weight:400;margin-top:1px" id="ot-rd-desc">High performer → other dept</div></div></div>
+    <div class="outcome-tag ot-pkg"><span class="ot-count">1</span><div><div id="ot-pkg-lbl">📦 Packaging</div><div style="font-size:11px;font-weight:400;margin-top:1px" id="ot-pkg-desc">Redirected from Ph2</div></div></div>
+    <div class="outcome-tag ot-prog"><span class="ot-count">1</span><div><div id="ot-prog-lbl">⏳ In Progress</div><div style="font-size:11px;font-weight:400;margin-top:1px" id="ot-prog-desc">Still training</div></div></div>
+    <div class="outcome-tag ot-exit"><span class="ot-count">1</span><div><div id="ot-exit-lbl">❌ Released</div><div style="font-size:11px;font-weight:400;margin-top:1px" id="ot-exit-desc">Phase 1 not passed</div></div></div>
+  </div>
+
+  <hr class="section-divider" />
+
+  <!-- ── SECTION 2: PASS RATE BARS ── -->
+  <div class="section-label" id="sl-passrate">PHASE PASS RATES</div>
+  <div class="pass-rate-card">
+    <div class="pass-rate-row">
+      <div class="pr-label">🟢 <span id="pr-p1-lbl">Phase 1</span></div>
+      <div class="pr-bar-wrap"><div class="pr-bar-fill" style="width:83%;background:var(--green)"></div></div>
+      <div class="pr-pct" style="color:var(--green)">83%</div>
+      <div class="pr-count" id="pr-p1-count">5 / 6</div>
+    </div>
+    <div class="pass-rate-row">
+      <div class="pr-label">🟡 <span id="pr-p2-lbl">Phase 2</span></div>
+      <div class="pr-bar-wrap"><div class="pr-bar-fill" style="width:80%;background:var(--orange)"></div></div>
+      <div class="pr-pct" style="color:var(--orange)">80%</div>
+      <div class="pr-count" id="pr-p2-count">4 / 5</div>
+    </div>
+    <div class="pass-rate-row">
+      <div class="pr-label">🔴 <span id="pr-p3-lbl">Phase 3</span></div>
+      <div class="pr-bar-wrap"><div class="pr-bar-fill" style="width:75%;background:var(--red)"></div></div>
+      <div class="pr-pct" style="color:var(--red)">75%</div>
+      <div class="pr-count" id="pr-p3-count">3 / 4</div>
+    </div>
+    <div class="pass-rate-row">
+      <div class="pr-label" style="color:var(--text2)">📊 <span id="pr-overall-lbl">Overall Ops Ready</span></div>
+      <div class="pr-bar-wrap"><div class="pr-bar-fill" style="width:33%;background:var(--blue)"></div></div>
+      <div class="pr-pct" style="color:var(--blue)">33%</div>
+      <div class="pr-count" id="pr-overall-count">2 / 6</div>
+    </div>
+  </div>
+
+  <hr class="section-divider" />
+
+  <!-- ── SECTION 3: TIMELINE GRID ── -->
+  <div class="section-label" id="sl-timeline">INDIVIDUAL PROGRESS TIMELINE</div>
+  <div class="timeline-card">
+    <!-- phase span header -->
+    <div class="phase-span-header">
+      <div class="ph-cell ph-empty"></div>
+      <div class="ph-cell ph-p1" id="ph-p1-span">── Phase 1 (Day 1–3) ──</div>
+      <div class="ph-cell ph-p2" id="ph-p2-span">────── Phase 2 (Day 4–7) ──────</div>
+      <div class="ph-cell ph-p3" id="ph-p3-span">Phase 3</div>
+      <div class="ph-cell ph-empty"></div>
+    </div>
+    <!-- column headers -->
+    <div class="timeline-header">
+      <div class="th-cell th-name" id="th-name">Name / Line</div>
+      <div class="th-cell phase-1">D1</div>
+      <div class="th-cell phase-1">D2</div>
+      <div class="th-cell phase-1">D3</div>
+      <div class="th-cell phase-2">D4</div>
+      <div class="th-cell phase-2">D5</div>
+      <div class="th-cell phase-2">D6</div>
+      <div class="th-cell phase-2">D7</div>
+      <div class="th-cell phase-3">W2</div>
+      <div class="th-cell" id="th-outcome">Outcome</div>
+    </div>
+    <!-- rows -->
+    <div id="timeline-body"></div>
+  </div>
+
+  <hr class="section-divider" />
+
+  <!-- ── SECTION 4: SCORE BAR LIST ── -->
+  <div class="section-label" id="sl-scores">GRAND TOTAL SCORES</div>
+  <div class="score-list-card">
+    <div class="score-list-header">
+      <div id="sl-hd-name">Trainee</div>
+      <div id="sl-hd-bar">Score (out of 126)</div>
+      <div id="sl-hd-total" style="text-align:right">Total</div>
+      <div id="sl-hd-outcome" style="text-align:right">Status</div>
+    </div>
+    <div id="score-list-body"></div>
+  </div>
+
+  <!-- ── INSIGHT BOX ── -->
+  <div class="insight-box">
+    <div class="insight-icon">💡</div>
+    <div>
+      <div class="insight-title" id="ins-title">Key Insight for Supervisors</div>
+      <div class="insight-text" id="ins-text">
+        The best performers don't have to stay on the machine line. A trainee who scores high in Phase 2 but gets redirected is not a failure — they are a high-value asset for other departments. This system helps you <strong>find the right people and put them in the right place</strong>, not just fill one role.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer" id="footer-text">Machine Operator Training System · Supervisor Dashboard · Data from Google Sheets</div>
+
+<script>
+  // ── DATA (demo) ──
+  const TRAINEES = [
+    { name: 'Ali Hassan',  machine: 'A3&4 LinaPack', d:[1,1,1,1,1,1,1,1], score:108, outcome:'ops' },
+    { name: 'May Chen',   machine: 'B4 Gualapack',  d:[1,1,1,1,1,1,1,0], score:105, outcome:'redeploy' },
+    { name: 'John Smith', machine: 'B1 Sanko',      d:[1,1,1,1,1,0,0,0], score: 89, outcome:'prog' },
+    { name: 'Sara Lee',   machine: 'A1&2 LinaPack', d:[1,1,1,1,0,0,0,0], score: 78, outcome:'prog' },
+    { name: 'Ben Yusuf',  machine: 'C1 Propack',    d:[1,1,0,0,0,0,0,0], score: 45, outcome:'pkg' },
+    { name: 'Kevin Wu',   machine: 'B2 Propack A',  d:[1,0,0,0,0,0,0,0], score: 22, outcome:'exit' },
+  ];
+
+  const OUTCOME_LABELS = {
+    en: { ops:'🏭 Ops Ready', redeploy:'⭐ Redeploy', prog:'⏳ In Progress', pkg:'📦 Packaging', exit:'❌ Released' },
+    zh: { ops:'🏭 獨立作業', redeploy:'⭐ 調配其他部門', prog:'⏳ 訓練中', pkg:'📦 包裝部門', exit:'❌ 不續僱' },
+  };
+  const OUTCOME_PILLS = { ops:'pill-ops', redeploy:'pill-redeploy', prog:'pill-prog', pkg:'pill-pkg', exit:'pill-exit' };
+
+  const CELL_ICONS = [
+    ['──',''],          // 0 = not reached (grey dash)
+    ['✅',''],          // 1 = passed
+    ['🚩',''],          // 2 = flagged
+    ['⏳',''],          // 3 = in progress (current)
+  ];
+
+  function getCellIcon(row, dayIdx) {
+    const d = row.d[dayIdx];
+    if (d === 1) return '✅';
+    if (d === 2) return '🚩';
+    if (d === 3) return '⏳';
+    // Not reached — check if previous was completed
+    const prevCompleted = dayIdx === 0 || row.d[dayIdx-1] === 1;
+    if (!prevCompleted) return '<span style="color:#ccc">──</span>';
+    return row.outcome === 'prog' ? '<span style="color:#ccc">──</span>' : '<span style="color:#ccc">──</span>';
+  }
+
+  let currentLang = 'en';
+
+  const STRINGS = {
+    en: {
+      'nav-back-lbl': 'Training Log',
+      'hd-title': 'Supervisor Training Dashboard',
+      'hd-sub': 'Machine Operator New Hire Programme · Yang Factory',
+      'sl-funnel': 'TALENT FUNNEL — CURRENT COHORT',
+      'fn-intake-lbl': 'Intake', 'fn-intake-desc': 'New hires this cycle',
+      'fn-p1-lbl': 'Passed Phase 1', 'fn-p1-desc': 'Attitude observation',
+      'fn-p2-lbl': 'Passed Phase 2', 'fn-p2-desc': 'Support role training',
+      'fn-p3-lbl': 'Ops Ready / Redeploy', 'fn-p3-desc': 'Full assessment complete',
+      'fn-exit-lbl': 'Released', 'fn-exit-desc': 'Not retained',
+      'ot-ops-lbl': '🏭 Ops Ready', 'ot-ops-desc': 'Independent operation',
+      'ot-rd-lbl': '⭐ Redeploy', 'ot-rd-desc': 'High performer → other dept',
+      'ot-pkg-lbl': '📦 Packaging', 'ot-pkg-desc': 'Redirected from Ph2',
+      'ot-prog-lbl': '⏳ In Progress', 'ot-prog-desc': 'Still training',
+      'ot-exit-lbl': '❌ Released', 'ot-exit-desc': 'Phase 1 not passed',
+      'sl-passrate': 'PHASE PASS RATES',
+      'pr-p1-lbl': 'Phase 1 — Attitude (Day 1–3)',
+      'pr-p2-lbl': 'Phase 2 — Support Role (Day 4–7)',
+      'pr-p3-lbl': 'Phase 3 — Independent Op (Week 2)',
+      'pr-overall-lbl': 'Overall Ops Ready Rate',
+      'pr-p1-count': '5 / 6', 'pr-p2-count': '4 / 5', 'pr-p3-count': '3 / 4', 'pr-overall-count': '2 / 6',
+      'sl-timeline': 'INDIVIDUAL PROGRESS TIMELINE',
+      'ph-p1-span': '── Phase 1 (Day 1–3) ──',
+      'ph-p2-span': '────── Phase 2 (Day 4–7) ──────',
+      'ph-p3-span': 'Phase 3',
+      'th-name': 'Name / Line', 'th-outcome': 'Outcome',
+      'sl-scores': 'GRAND TOTAL SCORES',
+      'sl-hd-name': 'Trainee', 'sl-hd-bar': 'Score (out of 126)', 'sl-hd-total': 'Total', 'sl-hd-outcome': 'Status',
+      'ins-title': 'Key Insight for Supervisors',
+      'ins-text': 'The best performers don\'t have to stay on the machine line. A trainee who scores high in Phase 2 but gets redirected is not a failure — they are a high-value asset for other departments. This system helps you <strong>find the right people and put them in the right place</strong>, not just fill one role.',
+      'footer-text': 'Machine Operator Training System · Supervisor Dashboard · Data from Google Sheets',
+    },
+    zh: {
+      'nav-back-lbl': '訓練記錄表',
+      'hd-title': '主管訓練總覽',
+      'hd-sub': 'Machine Operator 新人訓練計畫 · Yang 工廠',
+      'sl-funnel': '人才分流漏斗 — 本梯次',
+      'fn-intake-lbl': '新進人數', 'fn-intake-desc': '本梯次新進員工',
+      'fn-p1-lbl': 'Phase 1 通過', 'fn-p1-desc': '態度觀察階段',
+      'fn-p2-lbl': 'Phase 2 通過', 'fn-p2-desc': '輔助操作訓練',
+      'fn-p3-lbl': '達標 / 調配', 'fn-p3-desc': '全程評估完成',
+      'fn-exit-lbl': '不續僱', 'fn-exit-desc': '未達最低標準',
+      'ot-ops-lbl': '🏭 獨立作業', 'ot-ops-desc': 'Machine Operator',
+      'ot-rd-lbl': '⭐ 調配其他部門', 'ot-rd-desc': '優秀人才跨部門運用',
+      'ot-pkg-lbl': '📦 包裝部門', 'ot-pkg-desc': 'Phase 2 未達標轉調',
+      'ot-prog-lbl': '⏳ 訓練中', 'ot-prog-desc': '仍在進行中',
+      'ot-exit-lbl': '❌ 不續僱', 'ot-exit-desc': 'Phase 1 未通過',
+      'sl-passrate': '各階段達標率',
+      'pr-p1-lbl': 'Phase 1 — 態度觀察 (第 1–3 天)',
+      'pr-p2-lbl': 'Phase 2 — 輔助操作 (第 4–7 天)',
+      'pr-p3-lbl': 'Phase 3 — 獨立作業 (第二週)',
+      'pr-overall-lbl': '整體獨立作業達成率',
+      'pr-p1-count': '5 / 6', 'pr-p2-count': '4 / 5', 'pr-p3-count': '3 / 4', 'pr-overall-count': '2 / 6',
+      'sl-timeline': '個人進度時間軸',
+      'ph-p1-span': '── Phase 1（第 1–3 天）──',
+      'ph-p2-span': '────── Phase 2（第 4–7 天）──────',
+      'ph-p3-span': 'Phase 3',
+      'th-name': '姓名 / 機台', 'th-outcome': '最終結果',
+      'sl-scores': '總分排行',
+      'sl-hd-name': '受訓者', 'sl-hd-bar': '分數（滿分 126）', 'sl-hd-total': '總分', 'sl-hd-outcome': '狀態',
+      'ins-title': '給主管的關鍵洞察',
+      'ins-text': '表現最優秀的受訓者，不一定要留在 Machine Operator 崗位。Phase 2 高分但被調配的人，不是失敗——他們是其他部門的高價值人才。這套系統幫你 <strong>找到對的人，放在對的位置</strong>，而不只是填補一個崗位。',
+      'footer-text': 'Machine Operator 訓練系統 · 主管總覽 · 資料來源：Google Sheets',
+    }
+  };
+
+  function setLang(lang) {
+    currentLang = lang;
+    document.getElementById('lb-en').classList.toggle('active', lang==='en');
+    document.getElementById('lb-zh').classList.toggle('active', lang==='zh');
+    const s = STRINGS[lang];
+    Object.keys(s).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = s[id];
+    });
+    renderTimeline();
+    renderScoreList();
+  }
+
+  function renderTimeline() {
+    const body = document.getElementById('timeline-body');
+    const labels = OUTCOME_LABELS[currentLang];
+    body.innerHTML = TRAINEES.map(t => {
+      const cells = t.d.map((v,i) => `<div class="tr-cell">${getCellIcon(t,i)}</div>`).join('');
+      return `
+        <div class="timeline-row">
+          <div class="tr-name">${t.name}<div class="tr-sub">${t.machine}</div></div>
+          ${cells}
+          <div class="tr-outcome"><span class="outcome-pill ${OUTCOME_PILLS[t.outcome]}">${labels[t.outcome]}</span></div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderScoreList() {
+    const body = document.getElementById('score-list-body');
+    const labels = OUTCOME_LABELS[currentLang];
+    const sorted = [...TRAINEES].sort((a,b)=>b.score-a.score);
+    body.innerHTML = sorted.map(t => {
+      const pct = Math.round((t.score/126)*100);
+      const barColor = t.outcome==='ops' ? 'var(--green)' : t.outcome==='redeploy' ? 'var(--purple)' : t.outcome==='exit' ? 'var(--red)' : t.outcome==='pkg' ? 'var(--orange)' : 'var(--blue)';
+      const scoreDisplay = t.score < 45 ? `${t.score}*` : `${t.score}`;
+      return `
+        <div class="score-list-row">
+          <div class="sl-name">${t.name}<div class="sl-machine">${t.machine}</div></div>
+          <div class="sl-bar-wrap"><div class="sl-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+          <div class="sl-score">${scoreDisplay} / 126</div>
+          <div class="sl-outcome"><span class="outcome-pill ${OUTCOME_PILLS[t.outcome]}">${labels[t.outcome]}</span></div>
+        </div>`;
+    }).join('');
+  }
+
+  // date badge
+  const now = new Date();
+  document.getElementById('date-badge').textContent = now.toLocaleDateString('en-AU', {year:'numeric',month:'short',day:'numeric'});
+
+  renderTimeline();
+  renderScoreList();
+</script>
+</body>
+</html>
