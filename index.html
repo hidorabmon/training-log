@@ -1168,23 +1168,27 @@
         body.id = `body-${pfx}`;
         if (phase === 1 && dayNum === 1) body.classList.add('open'); // open first day by default
 
+        // Build all body HTML in one string to avoid innerHTML += open-tag bug
+        let html = '';
+
         // Date
-        body.innerHTML += `
+        html += `
           <div class="date-field">
             <label>📅 Date:</label>
             <input type="date" id="${pfx}_date" onchange="autoSave()">
           </div>`;
 
-        // Tasks
-        body.innerHTML += `<div class="section-title">✅ Tasks / Training Content</div><ul class="checklist">`;
+        // Tasks — build the full <ul>...</ul> as one string before appending
+        let taskHtml = `<div class="section-title">✅ Tasks / Training Content</div><ul class="checklist">`;
         tasks.forEach((t, i) => {
           const id = `${pfx}_task_${i}`;
-          body.innerHTML += `<li><label><input type="checkbox" id="${id}" onchange="autoSave()"> <span>${t.en}</span></label></li>`;
+          taskHtml += `<li><label><input type="checkbox" id="${id}" onchange="autoSave()"> <span>${t.en}</span></label></li>`;
         });
-        body.innerHTML += `</ul>`;
+        taskHtml += `</ul>`;
+        html += taskHtml;
 
         // Score table
-        body.innerHTML += `
+        html += `
           <div class="section-title">📊 Attitude Score (1=Poor / 2=Average / 3=Good)</div>
           <table class="score-table">
             <thead><tr><th>Item</th><th>Description</th><th>Score</th></tr></thead>
@@ -1192,10 +1196,10 @@
           </table>`;
 
         // Tags
-        body.innerHTML += `<div class="section-title">🏷️ Quick Tags</div><div class="tags-grid" id="tags-${pfx}"></div>`;
+        html += `<div class="section-title">🏷️ Quick Tags</div><div class="tags-grid" id="tags-${pfx}"></div>`;
 
         // Notes
-        body.innerHTML += `
+        html += `
           <div class="section-title">💬 Trainer Notes</div>
           <textarea class="notes-area" id="${pfx}_note" rows="3" placeholder="One sentence is enough..." oninput="autoSave()"></textarea>`;
 
@@ -1204,7 +1208,7 @@
           const decKey = `p${phase}_dec`;
           const noteKey = `p${phase}_dec_note`;
           const scoreKey = `sum-p${phase}`;
-          body.innerHTML += `
+          html += `
             <div class="decision-block">
               <h4>🔑 Phase ${phase} End Decision</h4>
               <div class="phase-score-display"><span id="${scoreKey}-disp">—</span> / ${maxScore * (phase < 3 ? (phase===1?3:4) : 1)}</div>
@@ -1224,6 +1228,9 @@
               <textarea class="notes-area" id="${noteKey}" rows="2" placeholder="Optional notes..." oninput="autoSave()"></textarea>
             </div>`;
         }
+
+        // Assign all HTML at once (avoids innerHTML += open-tag bug)
+        body.innerHTML = html;
 
         el.appendChild(body);
 
@@ -1343,7 +1350,8 @@
           const disp = document.getElementById(`sum-p${n}-disp`);
           const bar = document.getElementById(`bar-p${n}`);
           if (disp) disp.textContent = score || '—';
-          if (bar) bar.style.width = max > 0 ? `${Math.min(100, (score/max)*100)}%`;
+          // ✅ FIX 1: 補上三元運算子缺少的 ': else值'
+          if (bar) bar.style.width = max > 0 ? `${Math.min(100, (score/max)*100)}%` : '0%';
           if (bar && score >= pass) bar.style.background = 'var(--green)';
           else if (bar) bar.style.background = 'var(--orange)';
         };
@@ -1523,7 +1531,7 @@
 
       // ══════════════════════════════════════════
       // FETCH TRAINEE LIST FROM SHEETS
-      // ══════════════════════════════════════════
+      // ════════════════════════════════════════��═
       async function fetchTraineeList() {
         const sel = document.getElementById('trainee-select');
         sel.innerHTML = '<option value="">⏳ Loading from Google Sheets...</option>';
@@ -1597,7 +1605,8 @@
         try {
           const res = await fetch(SHEET_URL, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            // ✅ FIX 2: 改用 text/plain 避免 CORS preflight（Apps Script 不支援 OPTIONS request）
+            headers: {'Content-Type': 'text/plain'},
             body: JSON.stringify(data)
           });
           const json = await res.json();
