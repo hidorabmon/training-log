@@ -1,1295 +1,1757 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Machine Operator Training Log</title>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --text: #2C2C2B;
-    --text2: #7D7A75;
-    --canvas: #FFFFFF;
-    --surface: #F9F8F7;
-    --surface2: #F0EFED;
-    --border: #E6E5E3;
-    --blue: #2783DE;
-    --blue-soft: #E5F2FC;
-    --green: #46A171;
-    --green-soft: #E8F1EC;
-    --orange: #D5803B;
-    --orange-soft: #FBEBDE;
-    --red: #E56458;
-    --red-soft: #FCE9E7;
-    --radius: 8px;
-  }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
-    font-size: 15px;
-    line-height: 1.6;
-    color: var(--text);
-    background: var(--surface);
-    min-height: 100vh;
-  }
-
-  /* ── Layout ── */
-  .page-header {
-    background: var(--canvas);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .page-header-icon { font-size: 24px; }
-  .page-header h1 { font-size: 17px; font-weight: 600; color: var(--text); }
-  .page-header-sub { font-size: 13px; color: var(--text2); margin-left: auto; }
-
-  .container {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 32px 24px 80px;
-  }
-
-  /* ── Cards ── */
-  .card {
-    background: var(--canvas);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-
-  .card-title {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--text2);
-    margin-bottom: 16px;
-  }
-
-  /* ── Callout ── */
-  .callout {
-    background: var(--blue-soft);
-    border-left: 3px solid var(--blue);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    font-size: 14px;
-    color: var(--text);
-    margin-bottom: 24px;
-  }
-  .callout strong { color: var(--blue); }
-
-  /* ── Phase tabs ── */
-  .tabs {
-    display: flex;
-    gap: 4px;
-    background: var(--surface2);
-    border-radius: var(--radius);
-    padding: 4px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .tab-btn {
-    flex: 1;
-    min-width: 80px;
-    padding: 8px 10px;
-    border: none;
-    background: transparent;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text2);
-    cursor: pointer;
-    transition: all .15s;
-    white-space: nowrap;
-  }
-  .tab-btn:hover { background: var(--canvas); color: var(--text); }
-  .tab-btn.active {
-    background: var(--canvas);
-    color: var(--text);
-    box-shadow: 0 1px 3px rgba(0,0,0,.08);
-    font-weight: 600;
-  }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
-
-  /* ── Info table ── */
-  .info-grid {
-    display: grid;
-    grid-template-columns: 180px 1fr;
-    gap: 8px 12px;
-    align-items: center;
-  }
-  .info-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text2);
-  }
-  .info-input {
-    width: 100%;
-    padding: 7px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 14px;
-    color: var(--text);
-    background: var(--surface);
-    outline: none;
-    transition: border-color .15s;
-  }
-  .info-input:focus {
-    border-color: var(--blue);
-    background: var(--canvas);
-  }
-
-  /* ── Section heading ── */
-  .section-heading {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-desc {
-    font-size: 13px;
-    color: var(--text2);
-    margin-bottom: 16px;
-    padding-left: 2px;
-  }
-
-  /* ── Day sub-heading ── */
-  .day-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .day-badge {
-    background: var(--surface2);
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .date-input {
-    padding: 5px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 14px;
-    color: var(--text);
-    background: var(--surface);
-    outline: none;
-    transition: border-color .15s;
-  }
-  .date-input:focus { border-color: var(--blue); background: var(--canvas); }
-
-  /* ── Block label ── */
-  .block-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    margin: 16px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* ── Checkbox list ── */
-  .check-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-  @media (max-width: 500px) { .check-list { grid-template-columns: 1fr; } }
-  .check-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all .12s;
-    font-size: 13.5px;
-  }
-  .check-item:hover { background: var(--surface); }
-  .check-item input[type=checkbox] {
-    width: 16px; height: 16px;
-    accent-color: var(--blue);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .check-item.checked {
-    background: var(--blue-soft);
-    border-color: var(--blue);
-  }
-
-  /* ── Score table ── */
-  .score-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13.5px;
-  }
-  .score-table th {
-    text-align: left;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text2);
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .score-table td {
-    padding: 9px 8px;
-    border-bottom: 1px solid var(--surface2);
-    vertical-align: middle;
-  }
-  .score-table tr:last-child td { border-bottom: none; }
-  .score-select {
-    padding: 5px 8px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 13px;
-    background: var(--surface);
-    color: var(--text);
-    cursor: pointer;
-    outline: none;
-  }
-  .score-select:focus { border-color: var(--blue); }
-  .score-total-row td { font-weight: 600; background: var(--surface); }
-  .score-total-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-weight: 700;
-    font-size: 13px;
-    background: var(--surface2);
-    color: var(--text);
-    min-width: 52px;
-    text-align: center;
-  }
-  .score-total-badge.good { background: var(--green-soft); color: var(--green); }
-  .score-total-badge.mid { background: var(--orange-soft); color: var(--orange); }
-  .score-total-badge.low { background: var(--red-soft); color: var(--red); }
-
-  /* ── Tag list ── */
-  .tag-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .tag-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: all .12s;
-    background: var(--canvas);
-  }
-  .tag-item:hover { background: var(--surface); }
-  .tag-item input[type=checkbox] {
-    width: 14px; height: 14px;
-    accent-color: var(--blue);
-    cursor: pointer;
-  }
-  .tag-item.checked {
-    background: var(--blue-soft);
-    border-color: var(--blue);
-    color: var(--blue);
-  }
-
-  /* ── Notes ── */
-  .notes-area {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 14px;
-    color: var(--text);
-    background: var(--surface);
-    resize: vertical;
-    min-height: 60px;
-    outline: none;
-    font-family: inherit;
-    transition: border-color .15s;
-  }
-  .notes-area:focus { border-color: var(--blue); background: var(--canvas); }
-
-  /* ── Decision box ── */
-  .decision-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-top: 20px;
-  }
-  .decision-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: var(--text);
-  }
-  .decision-score {
-    font-size: 13px;
-    color: var(--text2);
-    margin-bottom: 12px;
-  }
-  .decision-options { display: flex; flex-direction: column; gap: 8px; }
-  .decision-option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13.5px;
-    transition: all .12s;
-    background: var(--canvas);
-  }
-  .decision-option:hover { background: var(--surface); }
-  .decision-option input[type=radio] {
-    width: 16px; height: 16px;
-    accent-color: var(--blue);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .decision-option.pass { border-color: var(--green); background: var(--green-soft); }
-  .decision-option.extend { border-color: var(--orange); background: var(--orange-soft); }
-  .decision-option.report { border-color: var(--red); background: var(--red-soft); }
-
-  /* ── Divider ── */
-  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
-
-  /* ── Summary ── */
-  .summary-section { margin-top: 24px; }
-  .summary-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }
-  .summary-table th, .summary-table td {
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    text-align: left;
-  }
-  .summary-table th {
-    background: var(--surface);
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--text2);
-    letter-spacing: .05em;
-  }
-  .summary-table td input, .summary-table td select {
-    width: 100%;
-    border: none;
-    background: transparent;
-    font-size: 14px;
-    color: var(--text);
-    outline: none;
-    font-family: inherit;
-  }
-
-  /* ── Print button ── */
-  .print-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: var(--canvas);
-    border-top: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    z-index: 200;
-  }
-  .btn {
-    padding: 9px 20px;
-    border: none;
-    border-radius: 7px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity .15s;
-  }
-  .btn:hover { opacity: .85; }
-  .btn-primary { background: var(--blue); color: #fff; }
-  .btn-secondary { background: var(--surface2); color: var(--text); }
-
-  .lang-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--canvas);
-    color: var(--text);
-    margin-left: 12px;
-    transition: all .15s;
-  }
-  .lang-btn:hover { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
-  [lang=en] .zh { display: none; }
-  [lang=zh] .en { display: none; }
-
-  @media print {
-    .print-bar, .tabs, .page-header { display: none !important; }
-    .tab-panel { display: block !important; }
-    .card { break-inside: avoid; }
-    body { background: #fff; }
-  }
-</style>
-</head>
-<body>
-
-<header class="page-header">
-  <span class="page-header-icon">📋</span>
-  <h1><span class="zh">Machine Operator 新人訓練記錄表</span><span class="en">Machine Operator Training Log</span></h1>
-  <span class="page-header-sub">Trainer Daily Log</span>
-  <button class="lang-btn" id="lang-toggle" onclick="toggleLang()">🌐 English</button>
-</header>
-
-<div class="container">
-
-  <div class="callout">
-    <span class="zh"><strong>使用說明：</strong> 每天結束前花 3–5 分鐘填寫當日區塊。Tick 任務 → 評分 → 選標籤 → 一行備注。最後在 Management Summary 填入匯總資料交給主管。</span><span class="en"><strong>How to Use:</strong> Spend 3–5 min at end of each shift. Tick tasks → Score → Select tags → Write one note. Fill Management Summary at end and hand to supervisor.</span>
-  </div>
-
-  <!-- ━━━ TRAINEE INFO ━━━ -->
-  <div class="card">
-    <div class="card-title"><span class="zh">📝 基本資料 / Trainee Info</span><span class="en">📝 Trainee Info</span></div>
-    <div class="info-grid">
-      <span class="info-label"><span class="zh">受訓員工姓名 Trainee Name</span><span class="en">Trainee Name</span></span>
-      <input class="info-input" type="text" placeholder="Enter name" id="trainee-name">
-
-      <span class="info-label"><span class="zh">訓練開始日期 Start Date</span><span class="en">Start Date</span></span>
-      <input class="info-input" type="date" id="start-date">
-
-      <span class="info-label"><span class="zh">負責訓練者 Trainer Name</span><span class="en">Trainer Name</span></span>
-      <input class="info-input" type="text" placeholder="Enter name" id="trainer-name">
-
-      <span class="info-label"><span class="zh">機台 / 產線 Machine / Line</span><span class="en">Machine / Line</span></span>
-      <input class="info-input" type="text" placeholder="例：B2 Propack A" id="machine-line">
-
-      <span class="info-label"><span class="zh">排班班別 Shift</span><span class="en">Shift</span></span>
-      <input class="info-input" type="text" placeholder="例：Afternoon Shift" id="shift">
-    </div>
-  </div>
-
-  <!-- ━━━ TABS ━━━ -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('phase1')" id="tab-phase1">🟢 Phase 1<br><small style="font-weight:400">Day 1–3</small></button>
-    <button class="tab-btn" onclick="switchTab('phase2')" id="tab-phase2">🟡 Phase 2<br><small style="font-weight:400">Day 4–7</small></button>
-    <button class="tab-btn" onclick="switchTab('phase3')" id="tab-phase3">🔴 Phase 3<br><small style="font-weight:400">Week 2+</small></button>
-    <button class="tab-btn" onclick="switchTab('summary')" id="tab-summary">📄 Summary</button>
-  </div>
-
-  <!-- ══════════════════════════════════════ -->
-  <!-- PHASE 1 -->
-  <!-- ══════════════════════════════════════ -->
-  <div class="tab-panel active" id="panel-phase1">
-    <div class="card">
-      <div class="section-heading"><span class="zh">🟢 Phase 1 — 態度觀察期 (Day 1–3)</span><span class="en">🟢 Phase 1 — Attitude Observation (Day 1–3)</span></div>
-      <div class="section-desc"><span class="zh">核心問題：這個人值得我們投入時間繼續培訓嗎？只分配低技術輔助任務，觀察態度，不需要教機台操作。</span><span class="en">Core question: Is this person worth investing more training time? Assign only low-skill support tasks. Observe attitude. Do not teach machine operation.</span></div>
-
-      <!-- Day 1 -->
-      <div class="day-header">
-        <span class="day-badge">Day 1</span>
-        <input class="date-input" type="date" id="d1-date">
-      </div>
-
-      <div class="block-label"><span class="zh">✅ 今日任務指派 Tasks Assigned</span><span class="en">✅ Tasks Assigned Today</span></div>
-      <div class="check-list" id="d1-tasks">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔機台周邊</span><span class="en">Clean around machine</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔地板</span><span class="en">Clean floors</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔工作檯面</span><span class="en">Clean workbenches</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充包裝袋</span><span class="en">Refill pouches</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充蓋子</span><span class="en">Refill lids</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">協助搬運成品托盤</span><span class="en">Assist moving finished trays</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">整理包裝材料</span><span class="en">Organise packaging materials</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score <span style="font-weight:400;color:var(--text2)">1=差 / 2=普通 / 3=好</span></span><span class="en">📊 Attitude Score <span style="font-weight:400;color:var(--text2)">1=Poor / 2=Average / 3=Good</span></span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d1')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d1-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 態度積極</span><span class="en">💪 Positive attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 主動問問題</span><span class="en">❓ Asked questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🐢 慢但認真</span><span class="en">🐢 Slow but genuine</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 被動等指示</span><span class="en">😐 Passive, waited for instructions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全意識弱</span><span class="en">⚠️ Safety awareness needs improvement</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🚩 態度需關注</span><span class="en">🚩 Attitude concern flagged</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">💬 訓練者備注 <span style="font-weight:400;color:var(--text2)">(一行即可)</span></span><span class="en">💬 Trainer Notes <span style="font-weight:400;color:var(--text2)">(one sentence is enough)</span></span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2" id="d1-notes"></textarea>
-
-      <hr>
-
-      <!-- Day 2 -->
-      <div class="day-header">
-        <span class="day-badge">Day 2</span>
-        <input class="date-input" type="date" id="d2-date">
-      </div>
-
-      <div class="block-label"><span class="zh">✅ 今日任務指派 Tasks Assigned</span><span class="en">✅ Tasks Assigned Today</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔機台周邊</span><span class="en">Clean around machine</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔地板</span><span class="en">Clean floors</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔工作檯面</span><span class="en">Clean workbenches</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充包裝袋</span><span class="en">Refill pouches</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充蓋子</span><span class="en">Refill lids</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">協助搬運成品托盤</span><span class="en">Assist moving finished trays</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">整理包裝材料</span><span class="en">Organise packaging materials</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score</span><span class="en">📊 Attitude Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d2')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d2-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 態度積極</span><span class="en">💪 Positive attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 主動問問題</span><span class="en">❓ Asked questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🐢 慢但認真</span><span class="en">🐢 Slow but genuine</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 被動等指示</span><span class="en">😐 Passive, waited for instructions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全意識弱</span><span class="en">⚠️ Safety awareness needs improvement</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🚩 態度需關注</span><span class="en">🚩 Attitude concern flagged</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">💬 訓練者備注 Trainer Notes</span><span class="en">💬 Trainer Notes</span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2" id="d2-notes"></textarea>
-
-      <hr>
-
-      <!-- Day 3 -->
-      <div class="day-header">
-        <span class="day-badge">Day 3</span>
-        <input class="date-input" type="date" id="d3-date">
-      </div>
-
-      <div class="block-label"><span class="zh">✅ 今日任務指派 Tasks Assigned</span><span class="en">✅ Tasks Assigned Today</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔機台周邊</span><span class="en">Clean around machine</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔地板</span><span class="en">Clean floors</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔工作檯面</span><span class="en">Clean workbenches</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充包裝袋</span><span class="en">Refill pouches</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">補充蓋子</span><span class="en">Refill lids</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">協助搬運成品托盤</span><span class="en">Assist moving finished trays</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">整理包裝材料</span><span class="en">Organise packaging materials</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score</span><span class="en">📊 Attitude Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d3')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d3-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 態度積極</span><span class="en">💪 Positive attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 主動問問題</span><span class="en">❓ Asked questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🐢 慢但認真</span><span class="en">🐢 Slow but genuine</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 被動等指示</span><span class="en">😐 Passive, waited for instructions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全意識弱</span><span class="en">⚠️ Safety awareness needs improvement</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🚩 態度需關注</span><span class="en">🚩 Attitude concern flagged</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">💬 訓練者備注 Trainer Notes</span><span class="en">💬 Trainer Notes</span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2" id="d3-notes"></textarea>
-
-      <!-- Phase 1 Decision -->
-      <div class="decision-box">
-        <div class="decision-title"><span class="zh">🔑 Phase 1 結束評估 (End of Phase 1 Decision)</span><span class="en">🔑 End of Phase 1 Decision</span></div>
-        <div class="decision-score" id="p1-score-display">Day 1–3 accumulated score: calculating…</div>
-        <div class="decision-options">
-          <label class="decision-option pass"><input type="radio" name="p1-decision"> ✅ <span class="zh">通過 PASS — 進入 Phase 2 正式培訓</span><span class="en">PASS — Proceed to Phase 2 formal training</span></label>
-          <label class="decision-option extend"><input type="radio" name="p1-decision"> ⏳ <span class="zh">延長觀察 EXTEND — 再觀察 1–2 天</span><span class="en">EXTEND — Observe 1–2 more days</span></label>
-          <label class="decision-option report"><input type="radio" name="p1-decision"> 🚩 <span class="zh">回報主管 REPORT — 立即向主管報告</span><span class="en">REPORT — Notify supervisor immediately</span></label>
-        </div>
-        <div class="block-label" style="margin-top:14px"><span class="zh">決策備注</span><span class="en">Decision Notes</span></div>
-        <textarea class="notes-area" placeholder="Explain decision reason..." rows="2"></textarea>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════ -->
-  <!-- PHASE 2 -->
-  <!-- ══════════════════════════════════════ -->
-  <div class="tab-panel" id="panel-phase2">
-    <div class="card">
-      <div class="section-heading"><span class="zh">🟡 Phase 2 — Support 角色培訓 (Day 4–7)</span><span class="en">🟡 Phase 2 — Support Role Training (Day 4–7)</span></div>
-      <div class="section-desc"><span class="zh">目標：在監督下輔助機台操作，建立基礎機台知識。所有操作需在訓練者陪同下進行，不允許新人獨立操作機台。</span><span class="en">Goal: Assist machine operation under supervision and build basic machine knowledge. All hands-on must be supervised. New hires must NOT operate independently.</span></div>
-
-      <!-- Day 4 -->
-      <div class="day-header">
-        <span class="day-badge">Day 4</span>
-        <input class="date-input" type="date" id="d4-date">
-      </div>
-
-      <div class="block-label"><span class="zh"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span> Training Content Covered</span><span class="en">✅ Training Content Covered Today</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">📊 態度評分 Attitude Score</span><span class="en">📊 Attitude Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂會主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">分配到辛苦任務態度正面</span><span class="en">Positive attitude toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">交辦任務有確實完成</span><span class="en">Completes assigned tasks properly</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d4')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分 Daily Total</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d4-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">🏷️ 今日標籤 Quick Tag</span><span class="en">🏷️ Quick Tags Today</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
-      </div>
-      <div class="block-label"><span class="zh">💬 訓練者備注</span><span class="en">💬 Trainer Notes</span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
-
-      <hr>
-
-      <!-- Day 5 -->
-      <div class="day-header"><span class="day-badge">Day 5</span><input class="date-input" type="date" id="d5-date"></div>
-      <div class="block-label"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-      <div class="block-label"><span class="zh">📊 態度評分</span><span class="en">📊 Attitude Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d5')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d5-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-      <div class="block-label"><span class="zh">🏷️ 快速標籤</span><span class="en">🏷️ Quick Tags</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
-      </div>
-      <div class="block-label"><span class="zh">💬 備注</span><span class="en">💬 Notes</span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
-
-      <hr>
-
-      <!-- Day 6 -->
-      <div class="day-header"><span class="day-badge">Day 6</span><input class="date-input" type="date" id="d6-date"></div>
-      <div class="block-label"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-      <div class="block-label"><span class="zh">📊 態度評分</span><span class="en">📊 Attitude Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d6')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d6-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-      <div class="block-label"><span class="zh">🏷️ 快速標籤</span><span class="en">🏷️ Quick Tags</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
-      </div>
-      <div class="block-label"><span class="zh">💬 備注</span><span class="en">💬 Notes</span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
-
-      <hr>
-
-      <!-- Day 7 -->
-      <div class="day-header"><span class="day-badge">Day 7</span><input class="date-input" type="date" id="d7-date"></div>
-      <div class="block-label"><span class="zh">✅ 今日教學內容</span><span class="en">✅ Training Content Today</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">機台各區域名稱與功能</span><span class="en">Machine area names and functions</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">正常運作流程概述</span><span class="en">Normal operation flow overview</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">觀察：聲音、速度、警示燈</span><span class="en">Observe: sound, speed, warning lights</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">基本開機前檢查（監督下）</span><span class="en">Pre-start checks (supervised)</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">清潔 SOP 標準流程</span><span class="en">Standard cleaning SOP walkthrough</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-      <div class="block-label"><span class="zh">📊 態度評分</span><span class="en">📊 Attitude Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('d7')"><option value="0">—</option><option value="1">1 — <span class="zh">差</span><span class="en">Poor</span></option><option value="2">2 — <span class="zh">普通</span><span class="en">Average</span></option><option value="3">3 — <span class="zh">好</span><span class="en">Good</span></option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">今日總分</span><span class="en">Daily Total</span></td><td><span class="score-total-badge" id="d7-total">—/15</span></td></tr>
-        </tbody>
-      </table>
-      <div class="block-label"><span class="zh">🏷️ 快速標籤</span><span class="en">🏷️ Quick Tags</span></div>
-      <div class="tag-list">
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">💪 學習態度好</span><span class="en">💪 Good learning attitude</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🔍 觀察仔細</span><span class="en">🔍 Attentive observer</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">🤝 輔助配合度高</span><span class="en">🤝 Good at assisting</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">❓ 問了好問題</span><span class="en">❓ Asked good questions</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">😐 需不斷提醒</span><span class="en">😐 Needs constant reminders</span></label>
-        <label class="tag-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">⚠️ 安全規範需加強</span><span class="en">⚠️ Safety rules need reinforcing</span></label>
-      </div>
-      <div class="block-label"><span class="zh">💬 備注</span><span class="en">💬 Notes</span></div>
-      <textarea class="notes-area" placeholder="Brief observation note..." rows="2"></textarea>
-
-      <!-- Phase 2 Decision -->
-      <div class="decision-box">
-        <div class="decision-title"><span class="zh">🔑 Phase 2 結束評估 (End of Phase 2 Decision)</span><span class="en">🔑 End of Phase 2 Decision</span></div>
-        <div class="decision-score" id="p2-score-display">Day 4–7 accumulated score: calculating…</div>
-        <div class="decision-options">
-          <label class="decision-option pass"><input type="radio" name="p2-decision"> ✅ <span class="zh">進入 Phase 3 PROCEED — 整體表現穩定</span><span class="en">PROCEED to Phase 3 — Overall performance stable</span></label>
-          <label class="decision-option extend"><input type="radio" name="p2-decision"> ⏳ <span class="zh">延長 Phase 2 EXTEND — 需多一週觀察</span><span class="en">EXTEND Phase 2 — Needs one more week</span></label>
-          <label class="decision-option report"><input type="radio" name="p2-decision"> 🚩 <span class="zh">回報主管 REPORT — 需主管介入</span><span class="en">REPORT — Supervisor intervention required</span></label>
-        </div>
-        <div class="block-label" style="margin-top:14px"><span class="zh">決策備注</span><span class="en">Decision Notes</span></div>
-        <textarea class="notes-area" rows="2" placeholder="Explain decision reason..."></textarea>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════ -->
-  <!-- PHASE 3 -->
-  <!-- ══════════════════════════════════════ -->
-  <div class="tab-panel" id="panel-phase3">
-    <div class="card">
-      <div class="section-heading"><span class="zh">🔴 Phase 3 — Full Operation (Week 2+)</span><span class="en">🔴 Phase 3 — Full Operation (Week 2+)</span></div>
-      <div class="section-desc"><span class="zh">目標：逐步建立獨立操作能力，包含異常處理與交班溝通。</span><span class="en">Goal: Build independent operation capability, including fault response and shift handover communication.</span></div>
-
-      <div class="day-header">
-        <span class="day-badge">Week 2</span>
-        <input class="date-input" type="date" placeholder="Start date"> &nbsp;–&nbsp;
-        <input class="date-input" type="date" placeholder="End date">
-      </div>
-
-      <div class="block-label"><span class="zh">✅ 本週教學內容</span><span class="en">✅ This Week's Training Content</span></div>
-      <div class="check-list">
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">完整機台操作流程</span><span class="en">Full machine operation flow</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">換產品操作</span><span class="en">Product changeover procedure</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">調整設定</span><span class="en">Settings adjustment</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">常見異常判斷與回報</span><span class="en">Identify and report common faults</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">高風險操作安全規範</span><span class="en">Safety rules for high-risk operations</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">如何查閱 Setting Record</span><span class="en">How to use Setting Record</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">交班溝通基本要求</span><span class="en">Shift handover communication</span></label>
-        <label class="check-item"><input type="checkbox" onchange="styleCheck(this)"> <span class="zh">其他</span><span class="en">Other</span></label>
-      </div>
-
-      <div class="block-label"><span class="zh">📊 本週綜合評分</span><span class="en">📊 Weekly Summary Score</span></div>
-      <table class="score-table">
-        <thead><tr><th><span class="zh">評估項目</span><span class="en">Item</span></th><th><span class="zh">說明</span><span class="en">Description</span></th><th width="90"><span class="zh">評分</span><span class="en">Score</span></th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">積極度</span><span class="en">Initiative</span></td><td style="color:var(--text2)"><span class="zh">不閒站、主動找事做</span><span class="en">Doesn't stand idle, proactively finds tasks</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr><td><span class="zh">主動詢問</span><span class="en">Asks Questions</span></td><td style="color:var(--text2)"><span class="zh">遇到不懂主動發問</span><span class="en">Asks when unsure</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr><td><span class="zh">接受指派</span><span class="en">Task Acceptance</span></td><td style="color:var(--text2)"><span class="zh">辛苦任務態度正面</span><span class="en">Positive toward tough tasks</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr><td><span class="zh">可靠度</span><span class="en">Reliability</span></td><td style="color:var(--text2)"><span class="zh">任務有確實完成</span><span class="en">Completes tasks properly</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr><td><span class="zh">安全意識</span><span class="en">Safety Awareness</span></td><td style="color:var(--text2)"><span class="zh">遵守衛生與安全規範</span><span class="en">Follows safety rules</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr><td><span class="zh">操作能力</span><span class="en">Operation Skill</span></td><td style="color:var(--text2)"><span class="zh">操作準確度與穩定度</span><span class="en">Accuracy and consistency of machine operation</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr><td><span class="zh">問題應對</span><span class="en">Problem Response</span></td><td style="color:var(--text2)"><span class="zh">遇異常能正確回報</span><span class="en">Correctly reports faults when they occur</span></td><td><select class="score-select" onchange="calcScore('w2')"><option value="0">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></td></tr>
-          <tr class="score-total-row"><td colspan="2"><span class="zh">本週總分</span><span class="en">Weekly Total</span></td><td><span class="score-total-badge" id="w2-total">—/21</span></td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">💬 本週重點觀察</span><span class="en">💬 Key Observations This Week</span></div>
-      <textarea class="notes-area" placeholder="Record key observations, progress and issues this week..." rows="4"></textarea>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════ -->
-  <!-- MANAGEMENT SUMMARY -->
-  <!-- ══════════════════════════════════════ -->
-  <div class="tab-panel" id="panel-summary">
-    <div class="card">
-      <div class="section-heading"><span class="zh">📄 Management Summary — 訓練總結報告</span><span class="en">📄 Management Summary — Training Report</span></div>
-      <div class="section-desc"><span class="zh">訓練期結束後填寫此欄，交給主管確認簽署。可列印此頁面作為正式紀錄。</span><span class="en">Fill in this section at the end of the training period and hand to your supervisor for sign-off. This page can be printed as an official record.</span></div>
-
-      <div class="block-label"><span class="zh">基本資訊</span><span class="en">Basic Information</span></div>
-      <table class="summary-table" style="margin-bottom:16px">
-        <tr><td width="180">Trainee Name</td><td><input type="text" placeholder="Trainee name" id="sum-trainee"></td></tr>
-        <tr><td>Trainer Name</td><td><input type="text" placeholder="Trainer name" id="sum-trainer"></td></tr>
-        <tr><td>Machine / Line</td><td><input type="text" placeholder="Machine / Line" id="sum-machine"></td></tr>
-        <tr><td>Training Period</td><td><input type="text" placeholder="2026-07-09 to 2026-07-20"></td></tr>
-        <tr><td>Total Training Days</td><td><input type="text" placeholder="No. of days"></td></tr>
-      </table>
-
-      <div class="block-label"><span class="zh">階段進展 Phase Progression</span><span class="en">Phase Progression</span></div>
-      <table class="summary-table" style="margin-bottom:16px">
-        <thead><tr><th>Phase</th><th>Dates</th><th width="200">Outcome</th></tr></thead>
-        <tbody>
-          <tr><td>Phase 1 — Attitude Observation (Day 1–3)</td><td><input type="text" placeholder="Date"></td><td><select style="width:100%;border:none;background:transparent;font-size:13px"><option>— Select —</option><option>✅ Pass</option><option>⏳ Extended</option><option>🚩 Reported to Supervisor</option></select></td></tr>
-          <tr><td>Phase 2 — Support Role (Day 4–7)</td><td><input type="text" placeholder="Date"></td><td><select style="width:100%;border:none;background:transparent;font-size:13px"><option>— Select —</option><option>✅ Pass</option><option>⏳ Extended</option><option>🚩 Reported to Supervisor</option></select></td></tr>
-          <tr><td>Phase 3 — Full Operation (Week 2+)</td><td><input type="text" placeholder="Date"></td><td><select style="width:100%;border:none;background:transparent;font-size:13px"><option>— Select —</option><option>✅ Ready</option><option>⏳ In Progress</option><option>🚩 Reported to Supervisor</option></select></td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">分數總覽 Overall Score Summary</span><span class="en">Overall Score Summary</span></div>
-      <table class="summary-table" style="margin-bottom:16px">
-        <thead><tr><th>Period</th><th width="100">Score</th><th width="80">Max</th></tr></thead>
-        <tbody>
-          <tr><td>Phase 1 (Day 1–3)</td><td><span id="sum-p1">—</span></td><td>/45</td></tr>
-          <tr><td>Phase 2 (Day 4–7)</td><td><span id="sum-p2">—</span></td><td>/60</td></tr>
-          <tr><td>Phase 3 (Week 2)</td><td><span id="sum-p3">—</span></td><td>/21</td></tr>
-          <tr style="font-weight:600;background:var(--surface)"><td>Grand Total</td><td><span id="sum-total">—</span></td><td>/126</td></tr>
-        </tbody>
-      </table>
-
-      <div class="block-label"><span class="zh">訓練者總體評估</span><span class="en">Trainer's Overall Assessment</span></div>
-      <textarea class="notes-area" rows="5" placeholder="3–5 sentences: strengths, areas for improvement, recommended next step..."></textarea>
-
-      <div class="block-label" style="margin-top:16px"><span class="zh">建議下一步</span><span class="en">Recommended Next Step</span></div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <label class="decision-option pass"><input type="radio" name="final-decision"> ✅ <span class="zh">已可獨立操作，不需進一步監督</span><span class="en">Ready for independent operation — no further supervision required</span></label>
-        <label class="decision-option extend"><input type="radio" name="final-decision"> 🔁 <span class="zh">繼續監督下操作 _______ 週</span><span class="en">Continue supervised operation for another _______ week(s)</span></label>
-        <label class="decision-option"><input type="radio" name="final-decision"> ⚠️ <span class="zh">僅擔任 support 赤 — 尚未準備好獨立操作</span><span class="en">Assign to support role only — not yet ready for independent operation</span></label>
-        <label class="decision-option report"><input type="radio" name="final-decision"> 🚩 <span class="zh">需進一步處理 — 請參考上方備注</span><span class="en">Further action required — see notes above</span></label>
-      </div>
-
-      <hr>
-      <table class="summary-table">
-        <thead><tr><th></th><th>Signature</th><th>Date</th></tr></thead>
-        <tbody>
-          <tr><td><span class="zh">訓練者 Trainer</span><span class="en">Trainer</span></td><td><input type="text" placeholder="Sign here"></td><td><input type="date"></td></tr>
-          <tr><td><span class="zh">主管 Supervisor</span><span class="en">Supervisor</span></td><td><input type="text" placeholder="Sign here"></td><td><input type="date"></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</div><!-- /container -->
-
-<div class="print-bar">
-  <button class="btn btn-secondary" style="background:var(--surface2);color:var(--text2);font-size:12px" onclick="clearData()"><span class="zh">🗑 清除</span><span class="en">🗑 Clear</span></button>
-  <button class="btn btn-secondary" onclick="window.print()"><span class="zh">🖨️ 列印</span><span class="en">🖨️ Print</span></button>
-  <button class="btn btn-secondary" onclick="syncSummary()"><span class="zh">📊 更新分數</span><span class="en">📊 Update Scores</span></button>
-  <button class="btn btn-secondary" onclick="exportReport()"><span class="zh">📥 匯出報告</span><span class="en">📥 Export Report</span></button>
-  <button class="btn btn-primary" style="background:var(--green)" onclick="submitToSheets()"><span class="zh">☁️ 送出記錄</span><span class="en">☁️ Submit Record</span></button>
-</div>
-
-<script>
-  /* ── Tabs ── */
-  function switchTab(id) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('panel-' + id).classList.add('active');
-    document.getElementById('tab-' + id).classList.add('active');
-  }
-
-  /* ── Checkbox styling ── */
-  function styleCheck(el) {
-    el.closest('.check-item, .tag-item').classList.toggle('checked', el.checked);
-  }
-
-  /* ── Score calculation ── */
-  const dayMaxes = { d1:15, d2:15, d3:15, d4:15, d5:15, d6:15, d7:15, w2:21 };
-
-  function calcScore(prefix) {
-    const panel = document.getElementById('panel-' +
-      (['d1','d2','d3'].includes(prefix) ? 'phase1' :
-       ['d4','d5','d6','d7'].includes(prefix) ? 'phase2' : 'phase3'));
-    const selects = [...panel.querySelectorAll('.score-select')].filter(s => {
-      // find selects in same day block
-      return s.closest('table').previousElementSibling?.textContent.includes('📊') ||
-             s.closest('table').previousElementSibling?.id === prefix + '-label';
-    });
-    // just grab all selects in the matching score table via day index
-    const allTables = panel.querySelectorAll('.score-table');
-    const dayIdx = ['d1','d2','d3','d4','d5','d6','d7','w2'].indexOf(prefix);
-    const dayWithinPhase = ['d1','d2','d3'].includes(prefix) ? dayIdx :
-                           ['d4','d5','d6','d7'].includes(prefix) ? dayIdx - 3 : 0;
-    const table = allTables[dayWithinPhase];
-    if (!table) return;
-    const vals = [...table.querySelectorAll('.score-select')].map(s => parseInt(s.value) || 0);
-    const total = vals.reduce((a,b) => a+b, 0);
-    const badge = document.getElementById(prefix + '-total');
-    if (!badge) return;
-    badge.textContent = total + '/' + dayMaxes[prefix];
-    const max = dayMaxes[prefix];
-    badge.className = 'score-total-badge';
-    if (total >= max * 0.8) badge.classList.add('good');
-    else if (total >= max * 0.5) badge.classList.add('mid');
-    else if (total > 0) badge.classList.add('low');
-    updatePhaseScores();
-  }
-
-  function updatePhaseScores() {
-    // P1
-    const p1 = getPhaseTotal(['d1','d2','d3']);
-    const p1El = document.getElementById('p1-score-display');
-    if (p1El) p1El.textContent = `Day 1–3 accumulated score: ${p1} / 45 ${ p1 >= 36 ? '✅ Pass' : p1 >= 24 ? '⏳ Extend' : p1 > 0 ? '🚩 Report' : '' }`;
-    // P2
-    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
-    const p2El = document.getElementById('p2-score-display');
-    if (p2El) p2El.textContent = `Day 4–7 累計總分：${p2} / 60 ${ p2 >= 48 ? '✅ Pass' : p2 >= 32 ? '⏳ Extend' : p2 > 0 ? '🚩 Report' : '' }`;
-  }
-
-  function getPhaseTotal(days) {
-    return days.reduce((acc, prefix) => {
-      const panel = document.getElementById('panel-' +
-        (['d1','d2','d3'].includes(prefix) ? 'phase1' : 'phase2'));
-      const allTables = panel.querySelectorAll('.score-table');
-      const dayIdx = ['d1','d2','d3'].includes(prefix) ?
-        ['d1','d2','d3'].indexOf(prefix) : ['d4','d5','d6','d7'].indexOf(prefix);
-      const table = allTables[dayIdx];
-      if (!table) return acc;
-      const vals = [...table.querySelectorAll('.score-select')].map(s => parseInt(s.value)||0);
-      return acc + vals.reduce((a,b)=>a+b,0);
-    }, 0);
-  }
-
-  function syncSummary() {
-    const p1 = getPhaseTotal(['d1','d2','d3']);
-    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
-    // w2
-    const w2Panel = document.getElementById('panel-phase3');
-    const w2Table = w2Panel.querySelector('.score-table');
-    const w2vals = w2Table ? [...w2Table.querySelectorAll('.score-select')].map(s=>parseInt(s.value)||0) : [];
-    const p3 = w2vals.reduce((a,b)=>a+b,0);
-    const grand = p1+p2+p3;
-    document.getElementById('sum-p1').textContent = p1;
-    document.getElementById('sum-p2').textContent = p2;
-    document.getElementById('sum-p3').textContent = p3;
-    document.getElementById('sum-total').textContent = grand;
-    // also sync trainee/trainer name from top
-    const tn = document.getElementById('trainee-name')?.value;
-    const tr = document.getElementById('trainer-name')?.value;
-    if (tn) document.getElementById('sum-trainee').value = tn;
-    if (tr) document.getElementById('sum-trainer').value = tr;
-    switchTab('summary');
-  }
-
-
-  /* ── Language toggle ── */
-  let currentLang = localStorage.getItem('ui-lang') || 'zh';
-  function applyLang(lang) {
-    document.documentElement.lang = lang;
-    currentLang = lang;
-    localStorage.setItem('ui-lang', lang);
-    const btn = document.getElementById('lang-toggle');
-    if (btn) btn.textContent = lang === 'zh' ? '🌐 English' : '🌐 中文';
-  }
-  function toggleLang() { applyLang(currentLang === 'zh' ? 'en' : 'zh'); }
-  applyLang(currentLang);
-
-  // init score display
-  updatePhaseScores();
-
-  /* ── AUTO-SAVE to localStorage ── */
-  const SAVE_KEY = 'training-log-v1';
-
-  function getAllFormData() {
-    const data = {};
-    document.querySelectorAll('input, select, textarea').forEach((el, i) => {
-      const key = el.id || el.name || ('el_' + i);
-      if (el.type === 'checkbox' || el.type === 'radio') {
-        data[key + '_' + i] = el.checked;
-      } else {
-        data[key + '_' + i] = el.value;
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Machine Operator Training Log</title>
+    <style>
+      :root {
+        --blue: #2783de;
+        --blue-soft: #e5f2fc;
+        --green: #46a171;
+        --green-soft: #e8f1ec;
+        --orange: #d5803b;
+        --orange-soft: #fbebde;
+        --red: #e56458;
+        --red-soft: #fce9e7;
+        --text: #2c2c2b;
+        --text2: #7d7a75;
+        --canvas: #ffffff;
+        --surface: #f9f8f7;
+        --surface2: #f0efed;
+        --border: #e6e5e3;
+        --radius: 8px;
+        --radius-lg: 12px;
       }
-    });
-    return data;
-  }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--surface);
+        min-height: 100vh;
+      }
 
-  function restoreFormData() {
-    try {
-      const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
-      if (!saved) return;
-      document.querySelectorAll('input, select, textarea').forEach((el, i) => {
-        const key = el.id || el.name || ('el_' + i);
-        const val = saved[key + '_' + i];
-        if (val === undefined) return;
-        if (el.type === 'checkbox' || el.type === 'radio') {
-          el.checked = val;
-          const parent = el.closest('.check-item, .tag-item, .decision-option');
-          if (parent) parent.classList.toggle('checked', val);
-        } else {
-          el.value = val;
+      /* ── HEADER ── */
+      .app-header {
+        background: var(--canvas);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .app-header h1 {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .app-header .subtitle {
+        font-size: 13px;
+        color: var(--text2);
+        margin-top: 2px;
+      }
+      .lang-btn {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 6px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        color: var(--text);
+      }
+      .lang-btn:hover {
+        background: var(--border);
+      }
+
+      /* ── TRAINEE MANAGER ── */
+      .trainee-manager {
+        background: var(--canvas);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+      }
+      .mode-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+      }
+      .mode-btns {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .mode-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: var(--radius);
+        border: 2px solid var(--border);
+        background: var(--surface);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--text2);
+        transition: all 0.15s;
+      }
+      .mode-btn:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-soft);
+      }
+      .mode-btn.active {
+        border-color: var(--blue);
+        color: var(--blue);
+        background: var(--blue-soft);
+      }
+      .mode-btn .icon {
+        font-size: 18px;
+      }
+
+      .load-panel {
+        margin-top: 14px;
+        display: none;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px;
+      }
+      .load-panel.visible {
+        display: block;
+      }
+      .load-panel .row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .load-panel label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+        display: block;
+        margin-bottom: 5px;
+      }
+      .load-panel select {
+        flex: 1;
+        min-width: 200px;
+        padding: 9px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 14px;
+        background: var(--canvas);
+        color: var(--text);
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237D7A75' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+      }
+      .load-panel select:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+      .btn-load {
+        padding: 9px 20px;
+        background: var(--blue);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-load:hover {
+        background: #1e6bbf;
+      }
+      .btn-refresh {
+        padding: 9px 14px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 14px;
+        cursor: pointer;
+        color: var(--text2);
+      }
+      .btn-refresh:hover {
+        background: var(--border);
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      .status-new {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+      .status-loaded {
+        background: var(--orange-soft);
+        color: var(--orange);
+      }
+
+      /* ── MAIN WRAPPER ── */
+      .main {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px 24px 80px;
+      }
+
+      /* ── TRAINEE INFO CARD ── */
+      .info-card {
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .info-card h2 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      @media (max-width: 600px) {
+        .form-grid {
+          grid-template-columns: 1fr;
         }
-      });
-      updatePhaseScores();
-      // recalc all day scores
-      ['d1','d2','d3','d4','d5','d6','d7','w2'].forEach(calcScore);
-      showToast('✅ Previous data restored');
-    } catch(e) {}
-  }
-
-  function saveNow() {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(getAllFormData()));
-  }
-
-  // Auto-save on any change
-  document.addEventListener('change', saveNow);
-  document.addEventListener('input', saveNow);
-
-  // Restore on load
-  window.addEventListener('load', restoreFormData);
-
-  /* ── EXPORT as text report ── */
-  function exportReport() {
-    const trainee = document.getElementById('trainee-name')?.value || '(blank)';
-    const trainer = document.getElementById('trainer-name')?.value || '(blank)';
-    const machine = document.getElementById('machine-line')?.value || '(blank)';
-    const shift   = document.getElementById('shift')?.value || '(blank)';
-    const startDate = document.getElementById('start-date')?.value || '(blank)';
-
-    const p1 = getPhaseTotal(['d1','d2','d3']);
-    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
-    const w2Panel = document.getElementById('panel-phase3');
-    const w2Table = w2Panel?.querySelector('.score-table');
-    const p3 = w2Table ? [...w2Table.querySelectorAll('.score-select')].map(s=>parseInt(s.value)||0).reduce((a,b)=>a+b,0) : 0;
-    const grand = p1+p2+p3;
-
-    const p1Decision = document.querySelector('input[name="p1-decision"]:checked')?.closest('label')?.textContent?.trim() || '(not selected)';
-    const p2Decision = document.querySelector('input[name="p2-decision"]:checked')?.closest('label')?.textContent?.trim() || '(not selected)';
-    const finalDec   = document.querySelector('input[name="final-decision"]:checked')?.closest('label')?.textContent?.trim() || '(not selected)';
-
-    // Collect notes by textarea order
-    const notes = [...document.querySelectorAll('textarea')].map((t,i) => t.value.trim()).filter(Boolean);
-
-    // Checked task items
-    function getCheckedItems(panelId) {
-      return [...document.getElementById(panelId).querySelectorAll('.check-item input:checked')]
-        .map(el => el.closest('.check-item').textContent.trim()).join(', ');
-    }
-    function getCheckedTags(panelId) {
-      return [...document.getElementById(panelId).querySelectorAll('.tag-item input:checked')]
-        .map(el => el.closest('.tag-item').textContent.trim()).join('  ');
-    }
-
-    const sep = '─'.repeat(50);
-    let report = `MACHINE OPERATOR TRAINING LOG
-${sep}
-Trainee      : ${trainee}
-Trainer      : ${trainer}
-Machine      : ${machine}
-Shift        : ${shift}
-Start Date   : ${startDate}
-${sep}
-
-[ Phase 1 — Attitude Observation (Day 1–3) ]
-`;
-    ['d1','d2','d3'].forEach((d, i) => {
-      const dateVal = document.getElementById(d+'-date')?.value || '';
-      const score = document.getElementById(d+'-total')?.textContent || '–';
-      const noteEl = document.querySelectorAll('textarea')[i];
-      const note = noteEl?.value?.trim() || '';
-      report += `  Day ${i+1} (${dateVal}) : Score ${score}\n`;
-      if (note) report += `    Note: ${note}\n`;
-    });
-    report += `  Phase 1 Total: ${p1}/45\n  Phase 1 Decision: ${p1Decision}\n\n`;
-
-    report += `[ Phase 2 — Support Role Training (Day 4–7) ]\n`;
-    ['d4','d5','d6','d7'].forEach((d, i) => {
-      const dateVal = document.getElementById(d+'-date')?.value || '';
-      const score = document.getElementById(d+'-total')?.textContent || '–';
-      const noteEl = document.querySelectorAll('textarea')[3+i];
-      const note = noteEl?.value?.trim() || '';
-      report += `  Day ${i+4} (${dateVal}) : Score ${score}\n`;
-      if (note) report += `    Note: ${note}\n`;
-    });
-    report += `  Phase 2 Total: ${p2}/60\n  Phase 2 Decision: ${p2Decision}\n\n`;
-
-    report += `[ Phase 3 — Full Operation (Week 2+) ]\n  Week 2 Total: ${p3}/21\n\n`;
-
-    report += `${sep}\n[ Overall Score Summary ]\n  Phase 1 : ${p1}/45\n  Phase 2 : ${p2}/60\n  Phase 3 : ${p3}/21\n  Grand Total : ${grand}/126\n\n  <span class="zh">Recommended Next Step: ${finalDec}\n${sep}\n`;
-
-    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Training-Log_${trainee.replace(/\s+/g,'-')}_${startDate || 'export'}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('📥 Report downloaded!');
-  }
-
-  /* ── SUBMIT to Google Sheets ── */
-  // ★ 步驟3：把你的 Apps Script 網址貼到下面這行
-  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwlKAd_ezGH0WMwsaby08vH0Xfnszj7rDyYDLaEO2Z4z2Mi83Imj9VJwqIHqjkg3_wVgA/exec';
-
-  async function submitToSheets() {
-    if (SHEET_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
-      showToast('❌ Please set the Apps Script URL in the HTML first!');
-      return;
-    }
-    const trainee   = document.getElementById('trainee-name')?.value || '';
-    const trainer   = document.getElementById('trainer-name')?.value || '';
-    const machine   = document.getElementById('machine-line')?.value || '';
-    const shift     = document.getElementById('shift')?.value || '';
-    const startDate = document.getElementById('start-date')?.value || '';
-
-    if (!trainee || !trainer) {
-      showToast('⚠️ Please fill in Trainee Name and Trainer Name first!');
-      return;
-    }
-
-    const p1 = getPhaseTotal(['d1','d2','d3']);
-    const p2 = getPhaseTotal(['d4','d5','d6','d7']);
-    const w2Panel = document.getElementById('panel-phase3');
-    const w2Table = w2Panel?.querySelector('.score-table');
-    const p3 = w2Table ? [...w2Table.querySelectorAll('.score-select')].map(s=>parseInt(s.value)||0).reduce((a,b)=>a+b,0) : 0;
-    const grand = p1 + p2 + p3;
-
-    const dayScores = {};
-    ['d1','d2','d3','d4','d5','d6','d7'].forEach((d, i) => {
-      dayScores['day'+(i+1)+'_date']  = document.getElementById(d+'-date')?.value || '';
-      dayScores['day'+(i+1)+'_score'] = document.getElementById(d+'-total')?.textContent || '';
-    });
-
-    const textareas = [...document.querySelectorAll('textarea')];
-    const dayNotes = {};
-    ['d1','d2','d3','d4','d5','d6','d7'].forEach((d, i) => {
-      dayNotes['day'+(i+1)+'_note'] = textareas[i]?.value?.trim() || '';
-    });
-    const overallNote = textareas[7]?.value?.trim() || '';
-
-    const p1Decision    = document.querySelector('input[name="p1-decision"]:checked')?.closest('label')?.textContent?.trim() || '';
-    const p2Decision    = document.querySelector('input[name="p2-decision"]:checked')?.closest('label')?.textContent?.trim() || '';
-    const finalDecision = document.querySelector('input[name="final-decision"]:checked')?.closest('label')?.textContent?.trim() || '';
-
-    const payload = {
-      submitted_at:   new Date().toLocaleString('zh-TW', {timeZone:'Australia/Melbourne'}),
-      trainee_name:   trainee,
-      trainer_name:   trainer,
-      machine_line:   machine,
-      shift:          shift,
-      start_date:     startDate,
-      ...dayScores,
-      ...dayNotes,
-      phase1_total:   p1 + '/45',
-      phase2_total:   p2 + '/60',
-      phase3_total:   p3 + '/21',
-      grand_total:    grand + '/126',
-      p1_decision:    p1Decision,
-      p2_decision:    p2Decision,
-      final_decision: finalDecision,
-      overall_note:   overallNote
-    };
-
-    showToast('⏳ Submitting...');
-    try {
-      const res = await fetch(SHEET_URL, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      const json = await res.json();
-      if (json.result === 'success') {
-        showToast('✅ Record submitted to Google Sheets!');
-      } else {
-        showToast('❌ Submit failed: ' + (json.error || 'Unknown error'));
       }
-    } catch(e) {
-      showToast('❌ Network error. Please check your connection and try again.');
-      console.error(e);
-    }
-  }
+      .form-field label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 5px;
+      }
+      .form-field input,
+      .form-field select {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 14px;
+        background: var(--canvas);
+        color: var(--text);
+      }
+      .form-field input:focus,
+      .form-field select:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+      .form-field.full {
+        grid-column: 1 / -1;
+      }
 
-  /* ── CLEAR data ── */
-  function clearData() {
-    if (!confirm('確定要清除所有已填寫的資料嗎？\n(此動作無法復原)')) return;
-    localStorage.removeItem(SAVE_KEY);
-    location.reload();
-  }
+      /* ── PHASE TABS ── */
+      .tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 24px;
+      }
+      .tab {
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text2);
+        background: none;
+        border: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.15s;
+      }
+      .tab.active {
+        color: var(--blue);
+        border-bottom-color: var(--blue);
+      }
+      .tab:hover:not(.active) {
+        color: var(--text);
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
 
-  /* ── Toast notification ── */
-  function showToast(msg) {
-    let t = document.getElementById('toast');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = 'toast';
-      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#2C2C2B;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap';
-      document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.opacity = '1';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
-  }
-</script>
+      /* ── PHASE HEADER ── */
+      .phase-header {
+        background: var(--blue-soft);
+        border: 1px solid #c2dff6;
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-bottom: 20px;
+      }
+      .phase-header h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--blue);
+      }
+      .phase-header p {
+        font-size: 13px;
+        color: #4a7fa8;
+        margin-top: 4px;
+      }
 
-</body>
+      /* ── DAY BLOCK ── */
+      .day-block {
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-bottom: 16px;
+        overflow: hidden;
+      }
+      .day-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        cursor: pointer;
+        user-select: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .day-header:hover {
+        background: var(--surface);
+      }
+      .day-header .day-title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .day-header .day-score {
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: var(--surface2);
+        color: var(--text2);
+      }
+      .day-header .chevron {
+        font-size: 12px;
+        color: var(--text2);
+        transition: transform 0.2s;
+      }
+      .day-body {
+        padding: 20px;
+        display: none;
+      }
+      .day-body.open {
+        display: block;
+      }
+
+      /* ── DATE FIELD ── */
+      .date-field {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .date-field label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text2);
+        white-space: nowrap;
+      }
+      .date-field input {
+        padding: 7px 10px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 13px;
+        background: var(--canvas);
+        color: var(--text);
+        width: 160px;
+      }
+      .date-field input:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+
+      /* ── TASK CHECKLIST ── */
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+      }
+      .checklist {
+        list-style: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 20px;
+      }
+      @media (max-width: 500px) {
+        .checklist {
+          grid-template-columns: 1fr;
+        }
+      }
+      .checklist li label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 6px;
+      }
+      .checklist li label:hover {
+        background: var(--surface);
+      }
+      .checklist li input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--blue);
+        flex-shrink: 0;
+      }
+
+      /* ── SCORING TABLE ── */
+      .score-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-size: 13px;
+      }
+      .score-table thead th {
+        background: var(--surface2);
+        padding: 8px 12px;
+        text-align: left;
+        font-weight: 700;
+        border: 1px solid var(--border);
+      }
+      .score-table tbody td {
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        vertical-align: middle;
+      }
+      .score-table .desc {
+        color: var(--text2);
+        font-size: 12px;
+      }
+      .score-radio {
+        display: flex;
+        gap: 6px;
+      }
+      .score-radio label {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1.5px solid var(--border);
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text2);
+        transition: all 0.15s;
+      }
+      .score-radio input {
+        display: none;
+      }
+      .score-radio input:checked + label.score-1 {
+        background: var(--red-soft);
+        border-color: var(--red);
+        color: var(--red);
+      }
+      .score-radio input:checked + label.score-2 {
+        background: var(--orange-soft);
+        border-color: var(--orange);
+        color: var(--orange);
+      }
+      .score-radio input:checked + label.score-3 {
+        background: var(--green-soft);
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .total-row td {
+        font-weight: 700;
+        background: var(--surface);
+      }
+      .day-total-chip {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 13px;
+        background: var(--surface2);
+        color: var(--text2);
+      }
+
+      /* ── QUICK TAGS ── */
+      .tags-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .tag-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        border: 1.5px solid var(--border);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        color: var(--text2);
+        transition: all 0.15s;
+        background: var(--canvas);
+      }
+      .tag-label:hover {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+      .tag-checkbox {
+        display: none;
+      }
+      .tag-checkbox:checked + .tag-label {
+        background: var(--blue-soft);
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      /* ── NOTES ── */
+      .notes-area {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-family: inherit;
+        color: var(--text);
+        resize: vertical;
+        min-height: 72px;
+        background: var(--canvas);
+      }
+      .notes-area:focus {
+        outline: none;
+        border-color: var(--blue);
+      }
+
+      /* ── PHASE DECISION ── */
+      .decision-block {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 16px 20px;
+        margin-top: 20px;
+      }
+      .decision-block h4 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      .decision-options {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .decision-option label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        border: 1.5px solid var(--border);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        background: var(--canvas);
+        transition: all 0.15s;
+      }
+      .decision-option label:hover {
+        border-color: var(--blue);
+      }
+      .decision-option input {
+        display: none;
+      }
+      .decision-option input:checked + label {
+        border-color: var(--blue);
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+      .phase-score-display {
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .phase-score-bar {
+        height: 8px;
+        background: var(--surface2);
+        border-radius: 4px;
+        margin-bottom: 12px;
+      }
+      .phase-score-fill {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--blue);
+        transition: width 0.3s;
+      }
+
+      /* ── ACTIONS ── */
+      .action-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--canvas);
+        border-top: 1px solid var(--border);
+        padding: 12px 24px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: flex-end;
+        z-index: 100;
+      }
+      .btn {
+        padding: 10px 22px;
+        border-radius: var(--radius);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+      }
+      .btn-primary {
+        background: var(--blue);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #1e6bbf;
+      }
+      .btn-primary:disabled {
+        background: var(--border);
+        color: var(--text2);
+        cursor: not-allowed;
+      }
+      .btn-secondary {
+        background: var(--surface2);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: var(--border);
+      }
+      .btn-danger {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid #f0b9b4;
+      }
+      .btn-danger:hover {
+        background: #f5ccc9;
+      }
+      .grand-total-chip {
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: var(--surface2);
+        color: var(--text2);
+        margin-right: auto;
+      }
+
+      /* ── TOAST ── */
+      .toast {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 24px;
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 999;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* ── SUMMARY ── */
+      .summary-card {
+        background: var(--canvas);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .summary-table th,
+      .summary-table td {
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        text-align: left;
+      }
+      .summary-table th {
+        background: var(--surface2);
+        font-weight: 700;
+      }
+      .summary-table .grand {
+        font-weight: 800;
+        font-size: 15px;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 600px) {
+        .main {
+          padding: 16px 16px 80px;
+        }
+        .app-header {
+          padding: 12px 16px;
+        }
+        .trainee-manager {
+          padding: 12px 16px;
+        }
+        .action-bar {
+          padding: 10px 16px;
+        }
+        .tab {
+          padding: 8px 12px;
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ══ HEADER ══ -->
+    <header class="app-header">
+      <div>
+        <h1 id="hd-title">🏭 Machine Operator Training Log</h1>
+        <div class="subtitle" id="hd-sub">Trainer Daily Evaluation Form</div>
+      </div>
+      <button class="lang-btn" onclick="toggleLang()">🌐 中文 / EN</button>
+    </header>
+
+    <!-- ══ TRAINEE MANAGER ══ -->
+    <div class="trainee-manager">
+      <div class="mode-label" id="lbl-mode">Select Mode / 選擇模式</div>
+      <div class="mode-btns">
+        <button class="mode-btn active" id="btn-new" onclick="setMode('new')">
+          <span class="icon">➕</span>
+          <span id="lbl-new-btn">New Trainee / 新增受訓者</span>
+        </button>
+        <button class="mode-btn" id="btn-load" onclick="setMode('load')">
+          <span class="icon">📂</span>
+          <span id="lbl-load-btn">Load Trainee / 讀取受訓者</span>
+        </button>
+      </div>
+
+      <!-- Load Panel -->
+      <div class="load-panel" id="load-panel">
+        <div class="row">
+          <div style="flex: 1; min-width: 200px">
+            <label id="lbl-select-trainee"
+              >Select trainee from Google Sheets / 從 Google Sheets
+              選擇受訓者</label
+            >
+            <select id="trainee-select">
+              <option value="">-- Loading... --</option>
+            </select>
+          </div>
+          <button
+            class="btn-load"
+            onclick="loadSelectedTrainee()"
+            id="btn-do-load"
+          >
+            📥 <span id="lbl-load-action">Load</span>
+          </button>
+          <button
+            class="btn-refresh"
+            onclick="fetchTraineeList()"
+            title="Refresh list"
+          >
+            🔄
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Status Badge -->
+      <div id="mode-status" style="margin-top: 10px">
+        <span class="status-badge status-new"
+          >✨
+          <span id="lbl-status-new"
+            >New record — will create new row in Sheets</span
+          ></span
+        >
+      </div>
+    </div>
+
+    <!-- ══ MAIN ══ -->
+    <div class="main">
+      <!-- Trainee Info -->
+      <div class="info-card">
+        <h2>📝 <span id="lbl-info-title">Trainee Information</span></h2>
+        <div class="form-grid">
+          <div class="form-field">
+            <label id="lbl-trainee">Trainee Name *</label>
+            <input
+              type="text"
+              id="trainee_name"
+              placeholder="e.g. John Smith"
+              oninput="autoSave()"
+            />
+          </div>
+          <div class="form-field">
+            <label id="lbl-trainer">Trainer Name *</label>
+            <input
+              type="text"
+              id="trainer_name"
+              placeholder="Your name"
+              oninput="autoSave()"
+            />
+          </div>
+          <div class="form-field">
+            <label id="lbl-machine">Machine / Line</label>
+            <input
+              type="text"
+              id="machine_line"
+              placeholder="e.g. B4 Gualapack"
+              oninput="autoSave()"
+            />
+          </div>
+          <div class="form-field">
+            <label id="lbl-shift">Shift</label>
+            <select id="shift" onchange="autoSave()">
+              <option value="">-- Select --</option>
+              <option>Day Shift</option>
+              <option>Afternoon Shift</option>
+              <option>Night Shift</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label id="lbl-start">Training Start Date</label>
+            <input type="date" id="start_date" oninput="autoSave()" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Phase Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)" id="tab0">
+          🟢 Phase 1<br /><small>Day 1–3</small>
+        </button>
+        <button class="tab" onclick="switchTab(1)" id="tab1">
+          🟡 Phase 2<br /><small>Day 4–7</small>
+        </button>
+        <button class="tab" onclick="switchTab(2)" id="tab2">
+          🔴 Phase 3<br /><small>Week 2</small>
+        </button>
+        <button class="tab" onclick="switchTab(3)" id="tab3">
+          📊 <span id="lbl-tab-sum">Summary</span>
+        </button>
+      </div>
+
+      <!-- ── PHASE 1 ── -->
+      <div class="tab-content active" id="tc0">
+        <div class="phase-header">
+          <h3 id="ph1-title">🟢 Phase 1 — Attitude Observation (Day 1–3)</h3>
+          <p id="ph1-desc">
+            Core question: Is this person worth investing further training time?
+          </p>
+        </div>
+        <!-- Days 1-3 generated by JS -->
+        <div id="phase1-days"></div>
+      </div>
+
+      <!-- ── PHASE 2 ── -->
+      <div class="tab-content" id="tc1">
+        <div
+          class="phase-header"
+          style="background: #fff8ed; border-color: #f5d9a8"
+        >
+          <h3 id="ph2-title" style="color: var(--orange)">
+            🟡 Phase 2 — Support Role Training (Day 4–7)
+          </h3>
+          <p id="ph2-desc" style="color: #a87030">
+            Goal: Assist machine operation under supervision. All tasks require
+            trainer presence.
+          </p>
+        </div>
+        <div id="phase2-days"></div>
+      </div>
+
+      <!-- ── PHASE 3 ── -->
+      <div class="tab-content" id="tc2">
+        <div
+          class="phase-header"
+          style="background: #fef0ef; border-color: #f5c0bc"
+        >
+          <h3 id="ph3-title" style="color: var(--red)">
+            🔴 Phase 3 — Full Operation (Week 2+)
+          </h3>
+          <p id="ph3-desc" style="color: #a84040">
+            Goal: Build independent operation skills including fault handling
+            and shift handover.
+          </p>
+        </div>
+        <div id="phase3-days"></div>
+      </div>
+
+      <!-- ── SUMMARY ── -->
+      <div class="tab-content" id="tc3">
+        <div class="summary-card">
+          <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px">
+            📊 <span id="lbl-sum-title">Training Summary</span>
+          </h2>
+          <table class="summary-table">
+            <thead>
+              <tr>
+                <th id="lbl-sum-phase">Phase</th>
+                <th id="lbl-sum-score">Score</th>
+                <th id="lbl-sum-max">Max</th>
+                <th id="lbl-sum-pass">Pass Line</th>
+                <th id="lbl-sum-status">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Phase 1 (Day 1–3)</td>
+                <td id="sum-p1">—</td>
+                <td>/45</td>
+                <td>36+</td>
+                <td id="sum-p1-status">—</td>
+              </tr>
+              <tr>
+                <td>Phase 2 (Day 4–7)</td>
+                <td id="sum-p2">—</td>
+                <td>/60</td>
+                <td>48+</td>
+                <td id="sum-p2-status">—</td>
+              </tr>
+              <tr>
+                <td>Phase 3 (Week 2)</td>
+                <td id="sum-p3">—</td>
+                <td>/21</td>
+                <td>17+</td>
+                <td id="sum-p3-status">—</td>
+              </tr>
+              <tr class="grand">
+                <td id="lbl-grand">Grand Total</td>
+                <td id="sum-grand">—</td>
+                <td>/126</td>
+                <td>—</td>
+                <td id="sum-grand-status">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="summary-card">
+          <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px">
+            📝 <span id="lbl-overall">Overall Assessment</span>
+          </h2>
+          <textarea
+            class="notes-area"
+            id="overall_note"
+            rows="5"
+            placeholder="3–5 sentences: strengths, areas for improvement, recommended next step..."
+            oninput="autoSave()"
+          ></textarea>
+        </div>
+        <div class="summary-card">
+          <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 12px">
+            ✅ <span id="lbl-final">Final Recommendation</span>
+          </h2>
+          <div class="decision-options">
+            <div class="decision-option">
+              <input
+                type="radio"
+                name="final_dec"
+                id="fd1"
+                value="Ready for independent operation"
+                onchange="autoSave()"
+              />
+              <label for="fd1">✅ Ready for independent operation</label>
+            </div>
+            <div class="decision-option">
+              <input
+                type="radio"
+                name="final_dec"
+                id="fd2"
+                value="Continue supervised operation"
+                onchange="autoSave()"
+              />
+              <label for="fd2"
+                >🔁 Continue supervised operation for another week</label
+              >
+            </div>
+            <div class="decision-option">
+              <input
+                type="radio"
+                name="final_dec"
+                id="fd3"
+                value="Support role only"
+                onchange="autoSave()"
+              />
+              <label for="fd3"
+                >⚠️ Support role only — not ready for independent
+                operation</label
+              >
+            </div>
+            <div class="decision-option">
+              <input
+                type="radio"
+                name="final_dec"
+                id="fd4"
+                value="Further action required"
+                onchange="autoSave()"
+              />
+              <label for="fd4">🚩 Further action required — see notes</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /main -->
+
+    <!-- ══ ACTION BAR ══ -->
+    <div class="action-bar">
+      <div class="grand-total-chip" id="grand-chip">Total: — / 126</div>
+      <button class="btn btn-danger" onclick="clearForm()">
+        🗑 <span id="lbl-clear">Clear</span>
+      </button>
+      <button class="btn btn-secondary" onclick="exportReport()">
+        📥 <span id="lbl-export">Export .txt</span>
+      </button>
+      <button class="btn btn-primary" onclick="submitRecord()" id="submit-btn">
+        ☁️ <span id="lbl-submit">Submit to Sheets</span>
+      </button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ══════════════════════════════════════════
+      // CONFIGURATION — replace with your URLs
+      // ══════════════════════════════════════════
+      const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxy-T-18vIT37jO2C6tpyMu2qcBbWCGLj2PQWIGCGcLM758MjS5MgGp5-tRdI2KAulMlg/exec';
+
+      // ══════════════════════════════════════════
+      // STATE
+      // ══════════════════════════════════════════
+      let lang = 'en';
+      let currentMode = 'new'; // 'new' | 'load'
+      let loadedRecordId = null; // row id from Sheets when in load mode
+      let traineeListCache = [];
+
+      // ══════════════════════════════════════════
+      // FORM STRUCTURE
+      // ══════════════════════════════════════════
+      const ATTITUDE_ITEMS = [
+        { key: 'initiative',  en: 'Initiative',       zh: '積極度',   descEn: 'No idle standing; actively finds work', descZh: '不閒站、主動找事做' },
+        { key: 'proactive_q', en: 'Proactive Q',      zh: '主動詢問', descEn: 'Asks when unsure', descZh: '遇到不懂會主動發問' },
+        { key: 'task_accept', en: 'Task Acceptance',  zh: '接受指派', descEn: 'Positive attitude for difficult tasks', descZh: '分配到辛苦任務態度正面' },
+        { key: 'reliability', en: 'Reliability',      zh: '可靠度',   descEn: 'Completes assigned tasks', descZh: '交辦任務有確實完成' },
+        { key: 'safety',      en: 'Safety Awareness', zh: '安全意識', descEn: 'Follows hygiene & safety rules', descZh: '遵守衛生與安全規範' },
+      ];
+      const EXTRA_P3_ITEMS = [
+        { key: 'op_skill',    en: 'Operation Skill',   zh: '操作能力',   descEn: 'Accuracy & stability in machine operation', descZh: '機台操作準確度與穩定度' },
+        { key: 'prob_resp',   en: 'Problem Response',  zh: '問題應對',   descEn: 'Correctly reports faults', descZh: '遇異常能正確回報' },
+      ];
+
+      const P1_TASKS = [
+        { en:'Clean around machine', zh:'清潔機台周邊' },
+        { en:'Clean floors', zh:'清潔地板' },
+        { en:'Clean workbenches', zh:'清潔工作檯面' },
+        { en:'Refill pouches', zh:'補充包裝袋' },
+        { en:'Refill lids', zh:'補充蓋子' },
+        { en:'Assist moving finished trays', zh:'協助搬運成品托盤' },
+        { en:'Organise packaging materials', zh:'整理包裝材料' },
+      ];
+      const P2_TASKS = [
+        { en:'Machine area names & functions', zh:'機台各區域名稱與功能' },
+        { en:'Normal operation flow overview', zh:'正常運作流程概述' },
+        { en:'Observe: sound, speed, warning lights', zh:'觀察方式：聲音、速度、警示燈' },
+        { en:'Pre-start checks (supervised)', zh:'基本開機前檢查（監督下）' },
+        { en:'Standard cleaning SOP walkthrough', zh:'清潔 SOP 標準流程' },
+      ];
+      const P3_TASKS = [
+        { en:'Full machine operation flow', zh:'完整機台操作流程' },
+        { en:'Product changeover procedure', zh:'換產品操作' },
+        { en:'Settings adjustment', zh:'調整設定' },
+        { en:'Identify & report common faults', zh:'常見異常的判斷與回報' },
+        { en:'Safety rules for high-risk operations', zh:'高風險操作安全規範' },
+        { en:'How to use Setting Record', zh:'如何查閱 Setting Record' },
+        { en:'Shift handover communication', zh:'交班溝通基本要求' },
+      ];
+      const P1_TAGS = [
+        {v:'positive',  en:'💪 Positive attitude',      zh:'💪 態度積極'},
+        {v:'questions', en:'❓ Asked questions',         zh:'❓ 主動問問題'},
+        {v:'slow_genuine',en:'🐢 Slow but genuine',      zh:'🐢 速度慢但認真'},
+        {v:'passive',   en:'😐 Passive, waited for instruction', zh:'😐 被動等指示'},
+        {v:'safety_low',en:'⚠️ Safety awareness needs improvement', zh:'⚠️ 安全意識需加強'},
+        {v:'attitude',  en:'🚩 Attitude concern flagged',zh:'🚩 態度問題，需關注'},
+      ];
+      const P2_TAGS = [
+        {v:'good_learn',en:'💪 Good learning attitude', zh:'💪 學習態度好'},
+        {v:'attentive', en:'🔍 Attentive observer',     zh:'🔍 觀察仔細'},
+        {v:'good_assist',en:'🤝 Good at assisting',     zh:'🤝 輔助配合度高'},
+        {v:'good_q',    en:'❓ Asked good questions',   zh:'❓ 問了好問題'},
+        {v:'reminders', en:'😐 Needs constant reminders',zh:'😐 需要不斷提醒'},
+        {v:'safety_low',en:'⚠️ Safety rules need reinforcing',zh:'⚠️ 安全規範需要加強'},
+      ];
+
+      // ══════════════════════════════════════════
+      // BUILD DOM
+      // ══════════════════════════════════════════
+      function buildDay(phase, dayNum, labelDay, tasks, attItems, tags, showDecision, maxScore) {
+        const pfx = `p${phase}_d${dayNum}`;
+        const el = document.createElement('div');
+        el.className = 'day-block';
+        el.id = `block-${pfx}`;
+
+        // HEADER
+        const hdr = document.createElement('div');
+        hdr.className = 'day-header';
+        hdr.innerHTML = `
+          <div>
+            <div class="day-title">Day ${labelDay}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="day-score" id="chip-${pfx}">—/${maxScore}</span>
+            <span class="chevron" id="chev-${pfx}">▼</span>
+          </div>`;
+        hdr.onclick = () => toggleDay(pfx);
+        el.appendChild(hdr);
+
+        // BODY
+        const body = document.createElement('div');
+        body.className = 'day-body';
+        body.id = `body-${pfx}`;
+        if (phase === 1 && dayNum === 1) body.classList.add('open'); // open first day by default
+
+        // Date
+        body.innerHTML += `
+          <div class="date-field">
+            <label>📅 Date:</label>
+            <input type="date" id="${pfx}_date" onchange="autoSave()">
+          </div>`;
+
+        // Tasks
+        body.innerHTML += `<div class="section-title">✅ Tasks / Training Content</div><ul class="checklist">`;
+        tasks.forEach((t, i) => {
+          const id = `${pfx}_task_${i}`;
+          body.innerHTML += `<li><label><input type="checkbox" id="${id}" onchange="autoSave()"> <span>${t.en}</span></label></li>`;
+        });
+        body.innerHTML += `</ul>`;
+
+        // Score table
+        body.innerHTML += `
+          <div class="section-title">📊 Attitude Score (1=Poor / 2=Average / 3=Good)</div>
+          <table class="score-table">
+            <thead><tr><th>Item</th><th>Description</th><th>Score</th></tr></thead>
+            <tbody id="tbl-${pfx}"></tbody>
+          </table>`;
+
+        // Tags
+        body.innerHTML += `<div class="section-title">🏷️ Quick Tags</div><div class="tags-grid" id="tags-${pfx}"></div>`;
+
+        // Notes
+        body.innerHTML += `
+          <div class="section-title">💬 Trainer Notes</div>
+          <textarea class="notes-area" id="${pfx}_note" rows="3" placeholder="One sentence is enough..." oninput="autoSave()"></textarea>`;
+
+        // Phase Decision
+        if (showDecision) {
+          const decKey = `p${phase}_dec`;
+          const noteKey = `p${phase}_dec_note`;
+          const scoreKey = `sum-p${phase}`;
+          body.innerHTML += `
+            <div class="decision-block">
+              <h4>🔑 Phase ${phase} End Decision</h4>
+              <div class="phase-score-display"><span id="${scoreKey}-disp">—</span> / ${maxScore * (phase < 3 ? (phase===1?3:4) : 1)}</div>
+              <div class="phase-score-bar"><div class="phase-score-fill" id="bar-p${phase}" style="width:0%"></div></div>
+              <div class="decision-options">
+                ${phase===1 ? `
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_pass" value="Pass" onchange="autoSave()"><label for="${decKey}_pass">✅ PASS — Proceed to Phase 2</label></div>
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_ext" value="Extend" onchange="autoSave()"><label for="${decKey}_ext">⏳ EXTEND — Observe 1–2 more days</label></div>
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_rep" value="Report" onchange="autoSave()"><label for="${decKey}_rep">🚩 REPORT — Escalate to supervisor</label></div>` : phase===2 ? `
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_proc" value="Proceed" onchange="autoSave()"><label for="${decKey}_proc">✅ PROCEED — Enter Phase 3</label></div>
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_ext" value="Extend" onchange="autoSave()"><label for="${decKey}_ext">⏳ EXTEND — Extra week of Phase 2</label></div>
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_rep" value="Report" onchange="autoSave()"><label for="${decKey}_rep">🚩 REPORT — Escalate to supervisor</label></div>` : `
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_ready" value="Ready" onchange="autoSave()"><label for="${decKey}_ready">✅ READY for independent operation</label></div>
+                <div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_cont" value="Continue" onchange="autoSave()"><label for="${decKey}_cont">⏳ CONTINUE supervised operation</label></div>`}
+              </div>
+              <div class="section-title" style="margin-top:10px">Decision Notes</div>
+              <textarea class="notes-area" id="${noteKey}" rows="2" placeholder="Optional notes..." oninput="autoSave()"></textarea>
+            </div>`;
+        }
+
+        el.appendChild(body);
+
+        // Score rows & tags injected after DOM append
+        setTimeout(() => {
+          const tbody = document.getElementById(`tbl-${pfx}`);
+          if (tbody) {
+            attItems.forEach(item => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td><strong>${item.en}</strong><br><span class="desc">${item.descEn}</span></td>
+                <td class="desc">${item.descEn}</td>
+                <td>
+                  <div class="score-radio">
+                    <input type="radio" name="${pfx}_${item.key}" id="${pfx}_${item.key}_1" value="1" onchange="calcScores();autoSave()">
+                    <label class="score-1" for="${pfx}_${item.key}_1">1</label>
+                    <input type="radio" name="${pfx}_${item.key}" id="${pfx}_${item.key}_2" value="2" onchange="calcScores();autoSave()">
+                    <label class="score-2" for="${pfx}_${item.key}_2">2</label>
+                    <input type="radio" name="${pfx}_${item.key}" id="${pfx}_${item.key}_3" value="3" onchange="calcScores();autoSave()">
+                    <label class="score-3" for="${pfx}_${item.key}_3">3</label>
+                  </div>
+                </td>`;
+              tbody.appendChild(tr);
+            });
+            // Total row
+            const tot = document.createElement('tr');
+            tot.className = 'total-row';
+            tot.innerHTML = `<td colspan="2"><strong>Daily Total</strong></td><td><span class="day-total-chip" id="tot-${pfx}">— / ${maxScore}</span></td>`;
+            tbody.appendChild(tot);
+          }
+          const tagsCont = document.getElementById(`tags-${pfx}`);
+          if (tagsCont) {
+            tags.forEach(tag => {
+              tagsCont.innerHTML += `
+                <input type="checkbox" class="tag-checkbox" id="tag-${pfx}-${tag.v}" value="${tag.v}" onchange="autoSave()">
+                <label class="tag-label" for="tag-${pfx}-${tag.v}">${tag.en}</label>`;
+            });
+          }
+        }, 0);
+
+        return el;
+      }
+
+      function buildAllDays() {
+        const p1 = document.getElementById('phase1-days');
+        const p2 = document.getElementById('phase2-days');
+        const p3 = document.getElementById('phase3-days');
+
+        [1,2,3].forEach(d => {
+          p1.appendChild(buildDay(1, d, d, P1_TASKS, ATTITUDE_ITEMS, P1_TAGS, d===3, 15));
+        });
+        [4,5,6,7].forEach((d, i) => {
+          p2.appendChild(buildDay(2, d, d, P2_TASKS, ATTITUDE_ITEMS, P2_TAGS, i===3, 15));
+        });
+        // Phase 3: Week 2 (single block)
+        p3.appendChild(buildDay(3, 'w2', '2 (Week 2)', P3_TASKS, [...ATTITUDE_ITEMS, ...EXTRA_P3_ITEMS], P2_TAGS, true, 21));
+      }
+
+      // ══════════════════════════════════════════
+      // TABS & TOGGLE
+      // ══════════════════════════════════════════
+      function switchTab(idx) {
+        document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+        document.querySelectorAll('.tab-content').forEach((c,i) => c.classList.toggle('active', i===idx));
+        if (idx === 3) updateSummary();
+      }
+      function toggleDay(pfx) {
+        const body = document.getElementById(`body-${pfx}`);
+        const chev = document.getElementById(`chev-${pfx}`);
+        const open = body.classList.toggle('open');
+        chev.textContent = open ? '▲' : '▼';
+      }
+
+      // ══════════════════════════════════════════
+      // SCORING
+      // ══════════════════════════════════════════
+      const DAY_KEYS = [
+        {pfx:'p1_d1', items: ATTITUDE_ITEMS},
+        {pfx:'p1_d2', items: ATTITUDE_ITEMS},
+        {pfx:'p1_d3', items: ATTITUDE_ITEMS},
+        {pfx:'p2_d4', items: ATTITUDE_ITEMS},
+        {pfx:'p2_d5', items: ATTITUDE_ITEMS},
+        {pfx:'p2_d6', items: ATTITUDE_ITEMS},
+        {pfx:'p2_d7', items: ATTITUDE_ITEMS},
+        {pfx:'p3_dw2', items: [...ATTITUDE_ITEMS, ...EXTRA_P3_ITEMS]},
+      ];
+
+      function getDayScore(pfx, items) {
+        let total = 0;
+        items.forEach(item => {
+          const el = document.querySelector(`input[name="${pfx}_${item.key}"]:checked`);
+          if (el) total += parseInt(el.value);
+        });
+        return total;
+      }
+
+      function calcScores() {
+        let grand = 0;
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const s = getDayScore(pfx, items);
+          const max = items.length * 3;
+          const chip = document.getElementById(`chip-${pfx}`);
+          const tot = document.getElementById(`tot-${pfx}`);
+          if (chip) chip.textContent = s > 0 ? `${s}/${max}` : `—/${max}`;
+          if (tot) tot.textContent = s > 0 ? `${s} / ${max}` : `— / ${max}`;
+          grand += s;
+        });
+        const gc = document.getElementById('grand-chip');
+        if (gc) gc.textContent = `Total: ${grand || '—'} / 126`;
+
+        // Phase totals
+        const p1 = getDayScore('p1_d1', ATTITUDE_ITEMS) + getDayScore('p1_d2', ATTITUDE_ITEMS) + getDayScore('p1_d3', ATTITUDE_ITEMS);
+        const p2 = getDayScore('p2_d4', ATTITUDE_ITEMS) + getDayScore('p2_d5', ATTITUDE_ITEMS) + getDayScore('p2_d6', ATTITUDE_ITEMS) + getDayScore('p2_d7', ATTITUDE_ITEMS);
+        const p3 = getDayScore('p3_dw2', [...ATTITUDE_ITEMS, ...EXTRA_P3_ITEMS]);
+
+        const setPhaseDisplay = (n, score, max, pass) => {
+          const disp = document.getElementById(`sum-p${n}-disp`);
+          const bar = document.getElementById(`bar-p${n}`);
+          if (disp) disp.textContent = score || '—';
+          if (bar) bar.style.width = max > 0 ? `${Math.min(100, (score/max)*100)}%`;
+          if (bar && score >= pass) bar.style.background = 'var(--green)';
+          else if (bar) bar.style.background = 'var(--orange)';
+        };
+        setPhaseDisplay(1, p1, 45, 36);
+        setPhaseDisplay(2, p2, 60, 48);
+        setPhaseDisplay(3, p3, 21, 17);
+      }
+
+      function updateSummary() {
+        const p1 = getDayScore('p1_d1', ATTITUDE_ITEMS) + getDayScore('p1_d2', ATTITUDE_ITEMS) + getDayScore('p1_d3', ATTITUDE_ITEMS);
+        const p2 = getDayScore('p2_d4', ATTITUDE_ITEMS) + getDayScore('p2_d5', ATTITUDE_ITEMS) + getDayScore('p2_d6', ATTITUDE_ITEMS) + getDayScore('p2_d7', ATTITUDE_ITEMS);
+        const p3 = getDayScore('p3_dw2', [...ATTITUDE_ITEMS, ...EXTRA_P3_ITEMS]);
+        const grand = p1 + p2 + p3;
+
+        const statusBadge = (score, pass) => {
+          if (!score) return '—';
+          if (score >= pass) return '✅ Pass';
+          if (score >= pass * 0.7) return '⏳ Extend';
+          return '🚩 Report';
+        };
+
+        document.getElementById('sum-p1').textContent = p1 || '—';
+        document.getElementById('sum-p2').textContent = p2 || '—';
+        document.getElementById('sum-p3').textContent = p3 || '—';
+        document.getElementById('sum-grand').textContent = grand || '—';
+        document.getElementById('sum-p1-status').textContent = statusBadge(p1, 36);
+        document.getElementById('sum-p2-status').textContent = statusBadge(p2, 48);
+        document.getElementById('sum-p3-status').textContent = statusBadge(p3, 17);
+        const gs = document.getElementById('sum-grand-status');
+        if (gs) gs.textContent = grand >= 101 ? '✅ Pass' : grand > 0 ? '⏳ Review' : '—';
+      }
+
+      // ══════════════════════════════════════════
+      // AUTOSAVE (localStorage)
+      // ══════════════════════════════════════════
+      function getFormData() {
+        const data = {};
+        // Info fields
+        ['trainee_name','trainer_name','machine_line','shift','start_date','overall_note'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) data[id] = el.value;
+        });
+        data['final_decision'] = getRadio('final_dec');
+
+        // Days
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const dateEl = document.getElementById(`${pfx}_date`);
+          if (dateEl) data[`${pfx}_date`] = dateEl.value;
+          items.forEach(item => {
+            data[`${pfx}_${item.key}`] = getRadioVal(`${pfx}_${item.key}`);
+          });
+          const noteEl = document.getElementById(`${pfx}_note`);
+          if (noteEl) data[`${pfx}_note`] = noteEl.value;
+          // tasks
+          const dayTasks = pfx.startsWith('p1') ? P1_TASKS : pfx.startsWith('p2') ? P2_TASKS : P3_TASKS;
+          dayTasks.forEach((_, i) => {
+            const cb = document.getElementById(`${pfx}_task_${i}`);
+            if (cb) data[`${pfx}_task_${i}`] = cb.checked;
+          });
+          // tags
+          const allTags = pfx.startsWith('p1') ? P1_TAGS : P2_TAGS;
+          allTags.forEach(tag => {
+            const cb = document.getElementById(`tag-${pfx}-${tag.v}`);
+            if (cb) data[`tag_${pfx}_${tag.v}`] = cb.checked;
+          });
+        });
+
+        // Phase decisions
+        ['p1_dec','p2_dec','p3_dec'].forEach(name => {
+          data[name] = getRadio(name);
+        });
+        ['p1_dec_note','p2_dec_note','p3_dec_note'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) data[id] = el.value;
+        });
+
+        // Scores
+        const p1 = getDayScore('p1_d1',ATTITUDE_ITEMS)+getDayScore('p1_d2',ATTITUDE_ITEMS)+getDayScore('p1_d3',ATTITUDE_ITEMS);
+        const p2 = getDayScore('p2_d4',ATTITUDE_ITEMS)+getDayScore('p2_d5',ATTITUDE_ITEMS)+getDayScore('p2_d6',ATTITUDE_ITEMS)+getDayScore('p2_d7',ATTITUDE_ITEMS);
+        const p3 = getDayScore('p3_dw2',[...ATTITUDE_ITEMS,...EXTRA_P3_ITEMS]);
+        data.phase1_total = p1; data.phase2_total = p2; data.phase3_total = p3;
+        data.grand_total = p1+p2+p3;
+        data.submitted_at = new Date().toISOString();
+        data.record_id = loadedRecordId; // null if new
+
+        // Per-day scores
+        DAY_KEYS.forEach(({pfx, items}) => {
+          data[`${pfx}_score`] = getDayScore(pfx, items);
+        });
+
+        return data;
+      }
+
+      function getRadio(name) {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '';
+      }
+      function getRadioVal(name) {
+        const el = document.querySelector(`input[name="${name}"]:checked`);
+        return el ? el.value : '';
+      }
+
+      function autoSave() {
+        try {
+          const data = getFormData();
+          localStorage.setItem('training_log_draft', JSON.stringify(data));
+        } catch(e) {}
+        calcScores();
+      }
+
+      function loadFromStorage(data) {
+        if (!data) return;
+        ['trainee_name','trainer_name','machine_line','shift','start_date','overall_note'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && data[id] !== undefined) el.value = data[id];
+        });
+        if (data.final_decision) {
+          const el = document.querySelector(`input[name="final_dec"][value="${data.final_decision}"]`);
+          if (el) el.checked = true;
+        }
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const dateEl = document.getElementById(`${pfx}_date`);
+          if (dateEl && data[`${pfx}_date`]) dateEl.value = data[`${pfx}_date`];
+          items.forEach(item => {
+            const val = data[`${pfx}_${item.key}`];
+            if (val) {
+              const el = document.querySelector(`input[name="${pfx}_${item.key}"][value="${val}"]`);
+              if (el) el.checked = true;
+            }
+          });
+          const noteEl = document.getElementById(`${pfx}_note`);
+          if (noteEl && data[`${pfx}_note`]) noteEl.value = data[`${pfx}_note`];
+          const dayTasks = pfx.startsWith('p1') ? P1_TASKS : pfx.startsWith('p2') ? P2_TASKS : P3_TASKS;
+          dayTasks.forEach((_, i) => {
+            const cb = document.getElementById(`${pfx}_task_${i}`);
+            if (cb && data[`${pfx}_task_${i}`] !== undefined) cb.checked = data[`${pfx}_task_${i}`];
+          });
+          const allTags = pfx.startsWith('p1') ? P1_TAGS : P2_TAGS;
+          allTags.forEach(tag => {
+            const cb = document.getElementById(`tag-${pfx}-${tag.v}`);
+            if (cb && data[`tag_${pfx}_${tag.v}`] !== undefined) cb.checked = data[`tag_${pfx}_${tag.v}`];
+          });
+        });
+        ['p1_dec','p2_dec','p3_dec'].forEach(name => {
+          if (data[name]) {
+            const el = document.querySelector(`input[name="${name}"][value="${data[name]}"]`);
+            if (el) el.checked = true;
+          }
+        });
+        ['p1_dec_note','p2_dec_note','p3_dec_note'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && data[id]) el.value = data[id];
+        });
+        calcScores();
+      }
+
+      // ══════════════════════════════════════════
+      // MODE: NEW / LOAD
+      // ══════════════════════════════════════════
+      function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btn-new').classList.toggle('active', mode==='new');
+        document.getElementById('btn-load').classList.toggle('active', mode==='load');
+        const lp = document.getElementById('load-panel');
+        const ms = document.getElementById('mode-status');
+
+        if (mode === 'new') {
+          lp.classList.remove('visible');
+          ms.innerHTML = `<span class="status-badge status-new">✨ New record — will create new row in Sheets</span>`;
+          loadedRecordId = null;
+        } else {
+          lp.classList.add('visible');
+          ms.innerHTML = `<span class="status-badge status-loaded">📂 Load mode — select a trainee to load previous data</span>`;
+          fetchTraineeList();
+        }
+      }
+
+      // ══════════════════════════════════════════
+      // FETCH TRAINEE LIST FROM SHEETS
+      // ══════════════════════════════════════════
+      async function fetchTraineeList() {
+        const sel = document.getElementById('trainee-select');
+        sel.innerHTML = '<option value="">⏳ Loading from Google Sheets...</option>';
+        try {
+          const url = `${SHEET_URL}?action=list`;
+          const res = await fetch(url);
+          const json = await res.json();
+          traineeListCache = json.trainees || [];
+
+          if (traineeListCache.length === 0) {
+            sel.innerHTML = '<option value="">— No records found —</option>';
+          } else {
+            sel.innerHTML = '<option value="">-- Select trainee --</option>';
+            traineeListCache.forEach(t => {
+              const opt = document.createElement('option');
+              opt.value = t.record_id;
+              opt.textContent = `${t.trainee_name} — ${t.trainer_name} (Start: ${t.start_date || 'N/A'})`;
+              sel.appendChild(opt);
+            });
+          }
+        } catch(e) {
+          sel.innerHTML = `<option value="">❌ Failed to load — check Apps Script URL</option>`;
+          showToast('❌ Could not reach Google Sheets');
+        }
+      }
+
+      async function loadSelectedTrainee() {
+        const sel = document.getElementById('trainee-select');
+        const recordId = sel.value;
+        if (!recordId) { showToast('⚠️ Please select a trainee first'); return; }
+
+        const btn = document.getElementById('btn-do-load');
+        btn.innerHTML = '<span class="spinner"></span>';
+        btn.disabled = true;
+
+        try {
+          const url = `${SHEET_URL}?action=get&record_id=${encodeURIComponent(recordId)}`;
+          const res = await fetch(url);
+          const json = await res.json();
+
+          if (json.record) {
+            loadedRecordId = recordId;
+            loadFromStorage(json.record);
+            document.getElementById('mode-status').innerHTML = `<span class="status-badge status-loaded">✏️ Editing: <strong>${json.record.trainee_name}</strong> — will UPDATE existing row</span>`;
+            showToast(`✅ Loaded: ${json.record.trainee_name}`);
+          } else {
+            showToast('❌ Record not found');
+          }
+        } catch(e) {
+          showToast('❌ Failed to load record');
+        } finally {
+          btn.innerHTML = '📥 <span id="lbl-load-action">Load</span>';
+          btn.disabled = false;
+        }
+      }
+
+      // ══════════════════════════════════════════
+      // SUBMIT TO SHEETS
+      // ══════════════════════════════════════════
+      async function submitRecord() {
+        const trainee = document.getElementById('trainee_name').value.trim();
+        if (!trainee) { showToast('⚠️ Please enter Trainee Name first'); return; }
+
+        const btn = document.getElementById('submit-btn');
+        btn.innerHTML = '<span class="spinner"></span> Submitting...';
+        btn.disabled = true;
+
+        const data = getFormData();
+        data.submitted_at = new Date().toISOString();
+
+        try {
+          const res = await fetch(SHEET_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+          if (json.result === 'success') {
+            if (json.record_id) loadedRecordId = json.record_id;
+            const action = data.record_id ? 'updated' : 'created';
+            showToast(`✅ Record ${action} successfully!`);
+            document.getElementById('mode-status').innerHTML =
+              `<span class="status-badge status-loaded">✅ Saved — editing <strong>${trainee}</strong> (row updated)</span>`;
+            // Auto-switch to load mode so subsequent submits update same row
+            if (!data.record_id && json.record_id) {
+              loadedRecordId = json.record_id;
+            }
+          } else {
+            showToast('❌ Error: ' + (json.error || 'Unknown error'));
+          }
+        } catch(e) {
+          showToast('❌ Network error — check connection');
+        } finally {
+          btn.innerHTML = '☁️ <span id="lbl-submit">Submit to Sheets</span>';
+          btn.disabled = false;
+        }
+      }
+
+      // ══════════════════════════════════════════
+      // CLEAR & EXPORT
+      // ══════════════════════════════════════════
+      function clearForm() {
+        if (!confirm('Clear all data and start fresh?')) return;
+        localStorage.removeItem('training_log_draft');
+        location.reload();
+      }
+
+      function exportReport() {
+        const data = getFormData();
+        let txt = `MACHINE OPERATOR TRAINING REPORT\n${'='.repeat(40)}\n`;
+        txt += `Trainee: ${data.trainee_name || '—'}\n`;
+        txt += `Trainer: ${data.trainer_name || '—'}\n`;
+        txt += `Machine/Line: ${data.machine_line || '—'}\n`;
+        txt += `Shift: ${data.shift || '—'}\n`;
+        txt += `Start Date: ${data.start_date || '—'}\n`;
+        txt += `\nSCORES\n${'-'.repeat(20)}\n`;
+        txt += `Phase 1 (Day 1-3): ${data.phase1_total} / 45\n`;
+        txt += `Phase 2 (Day 4-7): ${data.phase2_total} / 60\n`;
+        txt += `Phase 3 (Week 2):  ${data.phase3_total} / 21\n`;
+        txt += `Grand Total:       ${data.grand_total} / 126\n`;
+        txt += `\nDECISIONS\n${'-'.repeat(20)}\n`;
+        txt += `Phase 1: ${data.p1_dec || '—'}\n`;
+        txt += `Phase 2: ${data.p2_dec || '—'}\n`;
+        txt += `Phase 3: ${data.p3_dec || '—'}\n`;
+        txt += `Final:   ${data.final_decision || '—'}\n`;
+        txt += `\nOVERALL ASSESSMENT\n${'-'.repeat(20)}\n${data.overall_note || '—'}\n`;
+        txt += `\nExported: ${new Date().toLocaleString()}\n`;
+
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `training_${(data.trainee_name||'report').replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.txt`;
+        a.click();
+        showToast('📥 Report exported!');
+      }
+
+      // ══════════════════════════════════════════
+      // LANG TOGGLE
+      // ══════════════════════════════════════════
+      const STRINGS = {
+        en: {
+          'lbl-mode': 'Select Mode',
+          'lbl-new-btn': 'New Trainee',
+          'lbl-load-btn': 'Load Trainee',
+          'lbl-select-trainee': 'Select trainee from Google Sheets',
+          'lbl-load-action': 'Load',
+          'lbl-info-title': 'Trainee Information',
+          'lbl-trainee': 'Trainee Name *',
+          'lbl-trainer': 'Trainer Name *',
+          'lbl-machine': 'Machine / Line',
+          'lbl-shift': 'Shift',
+          'lbl-start': 'Training Start Date',
+          'lbl-tab-sum': 'Summary',
+          'lbl-sum-title': 'Training Summary',
+          'lbl-sum-phase': 'Phase', 'lbl-sum-score': 'Score',
+          'lbl-sum-max': 'Max', 'lbl-sum-pass': 'Pass Line', 'lbl-sum-status': 'Status',
+          'lbl-grand': 'Grand Total',
+          'lbl-overall': 'Overall Assessment',
+          'lbl-final': 'Final Recommendation',
+          'lbl-clear': 'Clear', 'lbl-export': 'Export .txt', 'lbl-submit': 'Submit to Sheets',
+        },
+        zh: {
+          'lbl-mode': '選擇模式',
+          'lbl-new-btn': '新增受訓者',
+          'lbl-load-btn': '讀取受訓者',
+          'lbl-select-trainee': '從 Google Sheets 選擇受訓者',
+          'lbl-load-action': '載入',
+          'lbl-info-title': '受訓者基本資料',
+          'lbl-trainee': '受訓員工姓名 *',
+          'lbl-trainer': '負責訓練者 *',
+          'lbl-machine': '所屬機台 / 產線',
+          'lbl-shift': '排班班別',
+          'lbl-start': '訓練開始日期',
+          'lbl-tab-sum': '訓練總結',
+          'lbl-sum-title': '訓練評分總覽',
+          'lbl-sum-phase': '階段', 'lbl-sum-score': '分數',
+          'lbl-sum-max': '滿分', 'lbl-sum-pass': '達標線', 'lbl-sum-status': '狀態',
+          'lbl-grand': '總計',
+          'lbl-overall': '整體評估',
+          'lbl-final': '最終建議',
+          'lbl-clear': '清除', 'lbl-export': '匯出 .txt', 'lbl-submit': '送出至 Sheets',
+        }
+      };
+      function toggleLang() {
+        lang = lang === 'en' ? 'zh' : 'en';
+        const s = STRINGS[lang];
+        Object.keys(s).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = s[id];
+        });
+      }
+
+      // ══════════════════════════════════════════
+      // TOAST
+      // ══════════════════════════════════════════
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+      }
+
+      // ══════════════════════════════════════════
+      // INIT
+      // ══════════════════════════════════════════
+      document.addEventListener('DOMContentLoaded', () => {
+        buildAllDays();
+        setTimeout(() => {
+          const saved = localStorage.getItem('training_log_draft');
+          if (saved) {
+            try {
+              const data = JSON.parse(saved);
+              if (data.trainee_name) {
+                if (confirm(`Resume draft for "${data.trainee_name}"?`)) {
+                  loadFromStorage(data);
+                  if (data.record_id) {
+                    loadedRecordId = data.record_id;
+                    document.getElementById('mode-status').innerHTML =
+                      `<span class="status-badge status-loaded">✏️ Resuming: <strong>${data.trainee_name}</strong></span>`;
+                  }
+                }
+              }
+            } catch(e) {}
+          }
+          calcScores();
+        }, 100);
+      });
+    </script>
+  </body>
 </html>
