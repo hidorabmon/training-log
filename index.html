@@ -58,6 +58,22 @@
         color: var(--text2);
         margin-top: 2px;
       }
+      /* ← ADD THIS BEFORE .lang-btn { */
+.nav-to-dash {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #e5f2fc;
+  border: 1px solid #b0d4f3;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2783de;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.nav-to-dash:hover { background: #cfe5f7; }
       .lang-btn {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -769,6 +785,7 @@
         <h1 id="hd-title">🏭 Machine Operator Training Log</h1>
         <div class="subtitle" id="hd-sub">Trainer Daily Evaluation Form</div>
       </div>
+      <a href="./dashboard.html" class="nav-to-dash">📊 Dashboard</a>
       <button class="lang-btn" onclick="toggleLang()">🌐 中文 / EN</button>
     </header>
 
