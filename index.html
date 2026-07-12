@@ -1073,7 +1073,7 @@
       // ══════════════════════════════════════════
       // CONFIGURATION — replace with your URLs
       // ══════════════════════════════════════════
-      const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzw0eL9-_sRBuUX-GEEmJaX-MeU8fdpcF4pGuVigJ5rHayfba9mapk3i4wSGn0nbtCXOw/exec';
+      const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxFxKGQwuPPIcJUAZ7_nIE6idjKEESn7KPp_l5ohEFy7NSDcSiawMYG03g_AZYArQVxEA/exec';
       // ══════════════════════════════════════════
       // STATE
       // ══════════════════════════════════════════
@@ -1509,6 +1509,27 @@
       }
 
       // ══════════════════════════════════════════
+      // RESET FORM (clear all fields before loading new trainee)
+      // ══════════════════════════════════════════
+      function resetForm() {
+        // Clear text / select / date fields
+        ['trainee_name','trainer_name','machine_line','shift','start_date','overall_note'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        // Clear ALL radio buttons (scores + decisions + final)
+        document.querySelectorAll('input[type="radio"]').forEach(el => { el.checked = false; });
+        // Clear ALL checkboxes (tasks + tags)
+        document.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
+        // Clear ALL textareas (notes + dec_notes + overall)
+        document.querySelectorAll('textarea').forEach(el => { el.value = ''; });
+        // Clear ALL date inputs inside day blocks
+        document.querySelectorAll('.day-body input[type="date"]').forEach(el => { el.value = ''; });
+        // Reset scores display
+        calcScores();
+      }
+
+      // ══════════════════════════════════════════
       // MODE: NEW / LOAD
       // ══════════════════════════════════════════
       function setMode(mode) {
@@ -1531,7 +1552,7 @@
 
       // ══════════════════════════════════════════
       // FETCH TRAINEE LIST FROM SHEETS
-      // ════════════════════════════════════════��═
+      // ═══════════��════════════════════════════��═
       async function fetchTraineeList() {
         const sel = document.getElementById('trainee-select');
         sel.innerHTML = '<option value="">⏳ Loading from Google Sheets...</option>';
@@ -1574,6 +1595,8 @@
 
           if (json.record) {
             loadedRecordId = recordId;
+            // ✅ 先清空整個表單，避免前一筆資料殘留
+            resetForm();
             loadFromStorage(json.record);
             document.getElementById('mode-status').innerHTML = `<span class="status-badge status-loaded">✏️ Editing: <strong>${json.record.trainee_name}</strong> — will UPDATE existing row</span>`;
             showToast(`✅ Loaded: ${json.record.trainee_name}`);
