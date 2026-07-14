@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Machine Operator Training Log</title>
+    <style>
+      :root {
+        --blue: #2783de;
+        --blue-soft: #e5f2fc;
+        --green: #46a171;
+        --green-soft: #e8f1ec;
+        --orange: #d5803b;
+        --orange-soft: #fbebde;
+        --red: #e56458;
+        --red-soft: #fce9e7;
+        --text: #2c2c2b;
+        --text2: #7d7a75;
+        --canvas: #ffffff;
+        --surface: #f9f8f7;
+        --surface2: #f0efed;
+        --border: #e6e5e3;
+        --radius: 8px;
+        --radius-lg: 12px;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 16px; line-height: 1.5;
+        color: var(--text); background: var(--surface); min-height: 100vh;
+      }
+      .app-header {
+        background: var(--canvas); border-bottom: 1px solid var(--border);
+        padding: 16px 24px; display: flex; align-items: center;
+        justify-content: space-between; position: sticky; top: 0; z-index: 100;
+      }
+      .app-header h1 { font-size: 18px; font-weight: 700; }
+      .app-header .subtitle { font-size: 13px; color: var(--text2); margin-top: 2px; }
+      .lang-btn {
+        background: var(--surface2); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 6px 14px;
+        font-size: 13px; cursor: pointer; color: var(--text);
+      }
+      .lang-btn:hover { background: var(--border); }
+      .trainee-manager {
+        background: var(--canvas); border-bottom: 1px solid var(--border); padding: 16px 24px;
+      }
+      .mode-label {
+        font-size: 13px; font-weight: 600; color: var(--text2);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+      }
+      .mode-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+      .mode-btn {
+        display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+        border-radius: var(--radius); border: 2px solid var(--border);
+        background: var(--surface); font-size: 14px; font-weight: 600;
+        cursor: pointer; color: var(--text2); transition: all 0.15s;
+      }
+      .mode-btn:hover, .mode-btn.active {
+        border-color: var(--blue); color: var(--blue); background: var(--blue-soft);
+      }
+      .mode-btn .icon { font-size: 18px; }
+      .load-panel {
+        margin-top: 14px; display: none; background: var(--surface);
+        border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px;
+      }
+      .load-panel.visible { display: block; }
+      .load-panel .row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+      .load-panel label { font-size: 13px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 5px; }
+      .load-panel select {
+        flex: 1; min-width: 200px; padding: 9px 12px;
+        border: 1.5px solid var(--border); border-radius: var(--radius);
+        font-size: 14px; background: var(--canvas); color: var(--text);
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237D7A75' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
+      }
+      .load-panel select:focus { outline: none; border-color: var(--blue); }
+      .btn-load {
+        padding: 9px 20px; background: var(--blue); color: #fff;
+        border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer;
+      }
+      .btn-load:hover { background: #1e6bbf; }
+      .btn-refresh {
+        padding: 9px 14px; background: var(--surface2); border: 1px solid var(--border);
+        border-radius: var(--radius); font-size: 14px; cursor: pointer; color: var(--text2);
+      }
+      .btn-refresh:hover { background: var(--border); }
+      .status-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px;
+      }
+      .status-new { background: var(--green-soft); color: var(--green); }
+      .status-loaded { background: var(--orange-soft); color: var(--orange); }
+      .main { max-width: 900px; margin: 0 auto; padding: 24px 24px 80px; }
+      .info-card {
+        background: var(--canvas); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;
+      }
+      .info-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+      .form-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
+      .form-field input, .form-field select {
+        width: 100%; padding: 9px 12px; border: 1.5px solid var(--border);
+        border-radius: var(--radius); font-size: 14px; background: var(--canvas); color: var(--text);
+      }
+      .form-field input:focus, .form-field select:focus { outline: none; border-color: var(--blue); }
+      .form-field.full { grid-column: 1 / -1; }
+      .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+      .tab {
+        padding: 10px 20px; font-size: 14px; font-weight: 600; color: var(--text2);
+        background: none; border: none; cursor: pointer;
+        border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+      }
+      .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+      .tab:hover:not(.active) { color: var(--text); }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      .phase-header {
+        background: var(--blue-soft); border: 1px solid #c2dff6;
+        border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 20px;
+      }
+      .phase-header h3 { font-size: 15px; font-weight: 700; color: var(--blue); }
+      .phase-header p { font-size: 13px; color: #4a7fa8; margin-top: 4px; }
+      .day-block {
+        background: var(--canvas); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden;
+      }
+      .day-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 20px; cursor: pointer; user-select: none; border-bottom: 1px solid var(--border);
+      }
+      .day-header:hover { background: var(--surface); }
+      .day-header .day-title { font-size: 14px; font-weight: 700; }
+      .day-header .day-score {
+        font-size: 13px; font-weight: 700; padding: 3px 10px;
+        border-radius: 20px; background: var(--surface2); color: var(--text2);
+      }
+      .day-header .chevron { font-size: 12px; color: var(--text2); transition: transform 0.2s; }
+      .day-body { padding: 20px; display: none; }
+      .day-body.open { display: block; }
+      .date-field { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+      .date-field label { font-size: 13px; font-weight: 600; color: var(--text2); white-space: nowrap; }
+      .date-field input {
+        padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius);
+        font-size: 13px; background: var(--canvas); color: var(--text); width: 160px;
+      }
+      .date-field input:focus { outline: none; border-color: var(--blue); }
+      .section-title {
+        font-size: 13px; font-weight: 700; color: var(--text2);
+        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+      }
+      .checklist { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 20px; }
+      @media (max-width: 500px) { .checklist { grid-template-columns: 1fr; } }
+      .checklist li label {
+        display: flex; align-items: center; gap: 8px; font-size: 13px;
+        cursor: pointer; padding: 6px 8px; border-radius: 6px;
+      }
+      .checklist li label:hover { background: var(--surface); }
+      .checklist li input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--blue); flex-shrink: 0; }
+      .score-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+      .score-table thead th {
+        background: var(--surface2); padding: 8px 12px;
+        text-align: left; font-weight: 700; border: 1px solid var(--border);
+      }
+      .score-table tbody td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: middle; }
+      .score-table .desc { color: var(--text2); font-size: 12px; }
+      .score-radio { display: flex; gap: 6px; }
+      .score-radio label {
+        width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+        border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer;
+        font-size: 13px; font-weight: 700; color: var(--text2); transition: all 0.15s;
+      }
+      .score-radio input { display: none; }
+      .score-radio input:checked + label.score-1 { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+      .score-radio input:checked + label.score-2 { background: var(--orange-soft); border-color: var(--orange); color: var(--orange); }
+      .score-radio input:checked + label.score-3 { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+      .total-row td { font-weight: 700; background: var(--surface); }
+      .day-total-chip { display: inline-block; padding: 2px 10px; border-radius: 20px; font-weight: 700; font-size: 13px; background: var(--surface2); color: var(--text2); }
+      .tags-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+      .tag-label {
+        display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+        border-radius: 20px; border: 1.5px solid var(--border); font-size: 12px;
+        font-weight: 600; cursor: pointer; color: var(--text2); transition: all 0.15s; background: var(--canvas);
+      }
+      .tag-label:hover { border-color: var(--blue); color: var(--blue); }
+      .tag-checkbox { display: none; }
+      .tag-checkbox:checked + .tag-label { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
+      .notes-area {
+        width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+        border-radius: var(--radius); font-size: 13px; font-family: inherit;
+        color: var(--text); resize: vertical; min-height: 72px; background: var(--canvas);
+      }
+      .notes-area:focus { outline: none; border-color: var(--blue); }
+      .decision-block {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--radius-lg); padding: 16px 20px; margin-top: 20px;
+      }
+      .decision-block h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+      .decision-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+      .decision-option label {
+        display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+        border-radius: var(--radius); border: 1.5px solid var(--border);
+        cursor: pointer; font-size: 13px; font-weight: 600; background: var(--canvas); transition: all 0.15s;
+      }
+      .decision-option label:hover { border-color: var(--blue); }
+      .decision-option input { display: none; }
+      .decision-option input:checked + label { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); }
+      .phase-score-display { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+      .phase-score-bar { height: 8px; background: var(--surface2); border-radius: 4px; margin-bottom: 12px; }
+      .phase-score-fill { height: 100%; border-radius: 4px; background: var(--blue); transition: width 0.3s; }
+      .action-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: var(--canvas); border-top: 1px solid var(--border);
+        padding: 12px 24px; display: flex; gap: 10px;
+        align-items: center; justify-content: flex-end; z-index: 100;
+      }
+      .btn { padding: 10px 22px; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+      .btn-primary { background: var(--blue); color: #fff; }
+      .btn-primary:hover { background: #1e6bbf; }
+      .btn-primary:disabled { background: var(--border); color: var(--text2); cursor: not-allowed; }
+      .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+      .btn-secondary:hover { background: var(--border); }
+      .btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid #f0b9b4; }
+      .btn-danger:hover { background: #f5ccc9; }
+      .grand-total-chip { font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px; background: var(--surface2); color: var(--text2); margin-right: auto; }
+      .toast {
+        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+        background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 24px;
+        font-size: 14px; font-weight: 600; opacity: 0; transition: opacity 0.3s;
+        z-index: 999; pointer-events: none; white-space: nowrap;
+      }
+      .toast.show { opacity: 1; }
+      .summary-card { background: var(--canvas); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
+      .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .summary-table th, .summary-table td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+      .summary-table th { background: var(--surface2); font-weight: 700; }
+      .summary-table .grand { font-weight: 800; font-size: 15px; }
+      .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (max-width: 600px) {
+        .main { padding: 16px 16px 80px; }
+        .app-header { padding: 12px 16px; }
+        .trainee-manager { padding: 12px 16px; }
+        .action-bar { padding: 10px 16px; }
+        .tab { padding: 8px 12px; font-size: 13px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1 id="hd-title">🏭 Machine Operator Training Log</h1>
+        <div class="subtitle" id="hd-sub">Trainer Daily Evaluation Form</div>
+      </div>
+      <button class="lang-btn" onclick="toggleLang()">🌐 中文 / EN</button>
+    </header>
+    <div class="trainee-manager">
+      <div class="mode-label" id="lbl-mode">Select Mode / 選擇模式</div>
+      <div class="mode-btns">
+        <button class="mode-btn active" id="btn-new" onclick="setMode('new')">
+          <span class="icon">➕</span>
+          <span id="lbl-new-btn">New Trainee / 新增受訓者</span>
+        </button>
+        <button class="mode-btn" id="btn-load" onclick="setMode('load')">
+          <span class="icon">📂</span>
+          <span id="lbl-load-btn">Load Trainee / 讀取受訓者</span>
+        </button>
+      </div>
+      <div class="load-panel" id="load-panel">
+        <div class="row">
+          <div style="flex:1;min-width:200px">
+            <label id="lbl-select-trainee">Select trainee from Google Sheets / 從 Google Sheets 選擇受訓者</label>
+            <select id="trainee-select"><option value="">-- Loading... --</option></select>
+          </div>
+          <button class="btn-load" onclick="loadSelectedTrainee()" id="btn-do-load">📥 <span id="lbl-load-action">Load</span></button>
+          <button class="btn-refresh" onclick="fetchTraineeList()" title="Refresh list">🔄</button>
+        </div>
+      </div>
+      <div id="mode-status" style="margin-top:10px">
+        <span class="status-badge status-new">✨ <span id="lbl-status-new">New record — will create new row in Sheets</span></span>
+      </div>
+    </div>
+    <div class="main">
+      <div class="info-card">
+        <h2>📝 <span id="lbl-info-title">Trainee Information</span></h2>
+        <div class="form-grid">
+          <div class="form-field"><label id="lbl-trainee">Trainee Name *</label><input type="text" id="trainee_name" placeholder="e.g. John Smith" oninput="autoSave()" /></div>
+          <div class="form-field"><label id="lbl-trainer">Trainer Name *</label><input type="text" id="trainer_name" placeholder="Your name" oninput="autoSave()" /></div>
+          <div class="form-field"><label id="lbl-machine">Machine / Line</label><input type="text" id="machine_line" placeholder="e.g. B4 Gualapack" oninput="autoSave()" /></div>
+          <div class="form-field">
+            <label id="lbl-shift">Shift</label>
+            <select id="shift" onchange="autoSave()">
+              <option value="">-- Select --</option>
+              <option>Day Shift</option><option>Afternoon Shift</option><option>Night Shift</option>
+            </select>
+          </div>
+          <div class="form-field"><label id="lbl-start">Training Start Date</label><input type="date" id="start_date" oninput="autoSave()" /></div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)" id="tab0">🟢 Phase 1<br /><small>Day 1–3</small></button>
+        <button class="tab" onclick="switchTab(1)" id="tab1">🟡 Phase 2<br /><small>Day 4–7</small></button>
+        <button class="tab" onclick="switchTab(2)" id="tab2">🔴 Phase 3<br /><small>Week 2</small></button>
+        <button class="tab" onclick="switchTab(3)" id="tab3">📊 <span id="lbl-tab-sum">Summary</span></button>
+      </div>
+      <div class="tab-content active" id="tc0">
+        <div class="phase-header">
+          <h3 id="ph1-title">🟢 Phase 1 — Attitude Observation (Day 1–3)</h3>
+          <p id="ph1-desc">Core question: Is this person worth investing further training time?</p>
+        </div>
+        <div id="phase1-days"></div>
+      </div>
+      <div class="tab-content" id="tc1">
+        <div class="phase-header" style="background:#fff8ed;border-color:#f5d9a8">
+          <h3 id="ph2-title" style="color:var(--orange)">🟡 Phase 2 — Support Role Training (Day 4–7)</h3>
+          <p id="ph2-desc" style="color:#a87030">Goal: Assist machine operation under supervision. All tasks require trainer presence.</p>
+        </div>
+        <div id="phase2-days"></div>
+      </div>
+      <div class="tab-content" id="tc2">
+        <div class="phase-header" style="background:#fef0ef;border-color:#f5c0bc">
+          <h3 id="ph3-title" style="color:var(--red)">🔴 Phase 3 — Full Operation (Week 2+)</h3>
+          <p id="ph3-desc" style="color:#a84040">Goal: Build independent operation skills including fault handling and shift handover.</p>
+        </div>
+        <div id="phase3-days"></div>
+      </div>
+      <div class="tab-content" id="tc3">
+        <div class="summary-card">
+          <h2 style="font-size:16px;font-weight:700;margin-bottom:16px">📊 <span id="lbl-sum-title">Training Summary</span></h2>
+          <table class="summary-table">
+            <thead><tr><th id="lbl-sum-phase">Phase</th><th id="lbl-sum-score">Score</th><th id="lbl-sum-max">Max</th><th id="lbl-sum-pass">Pass Line</th><th id="lbl-sum-status">Status</th></tr></thead>
+            <tbody>
+              <tr><td>Phase 1 (Day 1–3)</td><td id="sum-p1">—</td><td>/45</td><td>36+</td><td id="sum-p1-status">—</td></tr>
+              <tr><td>Phase 2 (Day 4–7)</td><td id="sum-p2">—</td><td>/60</td><td>48+</td><td id="sum-p2-status">—</td></tr>
+              <tr><td>Phase 3 (Week 2)</td><td id="sum-p3">—</td><td>/21</td><td>17+</td><td id="sum-p3-status">—</td></tr>
+              <tr class="grand"><td id="lbl-grand">Grand Total</td><td id="sum-grand">—</td><td>/126</td><td>—</td><td id="sum-grand-status">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="summary-card">
+          <h2 style="font-size:16px;font-weight:700;margin-bottom:16px">📝 <span id="lbl-overall">Overall Assessment</span></h2>
+          <textarea class="notes-area" id="overall_note" rows="5" placeholder="3–5 sentences: strengths, areas for improvement, recommended next step..." oninput="autoSave()"></textarea>
+        </div>
+        <div class="summary-card">
+          <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">✅ <span id="lbl-final">Final Recommendation</span></h2>
+          <div class="decision-options">
+            <div class="decision-option"><input type="radio" name="final_dec" id="fd1" value="Ready for independent operation" onchange="autoSave()" /><label for="fd1">✅ Ready for independent operation</label></div>
+            <div class="decision-option"><input type="radio" name="final_dec" id="fd2" value="Continue supervised operation" onchange="autoSave()" /><label for="fd2">🔁 Continue supervised operation for another week</label></div>
+            <div class="decision-option"><input type="radio" name="final_dec" id="fd3" value="Support role only" onchange="autoSave()" /><label for="fd3">⚠️ Support role only — not ready for independent operation</label></div>
+            <div class="decision-option"><input type="radio" name="final_dec" id="fd4" value="Further action required" onchange="autoSave()" /><label for="fd4">🚩 Further action required — see notes</label></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="action-bar">
+      <div class="grand-total-chip" id="grand-chip">Total: — / 126</div>
+      <button class="btn btn-danger" onclick="clearForm()">🗑 <span id="lbl-clear">Clear</span></button>
+      <button class="btn btn-secondary" onclick="exportReport()">📥 <span id="lbl-export">Export .txt</span></button>
+      <button class="btn btn-primary" onclick="submitRecord()" id="submit-btn">☁️ <span id="lbl-submit">Submit to Sheets</span></button>
+    </div>
+    <div class="toast" id="toast"></div>
+    <script>
+      const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyLi_v6wSMClJ_4nmN1yA7mtvgMGBb660iZ3gQYSO4upiyI76edxunQKlmXmJGX35a-OA/exec';
+      let lang = 'en';
+      let currentMode = 'new';
+      let loadedRecordId = null;
+      let traineeListCache = [];
+
+      const ATTITUDE_ITEMS = [
+        { key: 'initiative',  en: 'Initiative',       zh: '積極度',   descEn: 'No idle standing; actively finds work', descZh: '不閒站、主動找事做' },
+        { key: 'proactive_q', en: 'Proactive Q',      zh: '主動詢問', descEn: 'Asks when unsure', descZh: '遇到不懂會主動詢問' },
+        { key: 'task_accept', en: 'Task Acceptance',  zh: '接受指派', descEn: 'Positive attitude for difficult tasks', descZh: '分配到辛苦任務態度正面' },
+        { key: 'reliability', en: 'Reliability',      zh: '可靠度',   descEn: 'Completes assigned tasks', descZh: '交辦任務有確實完成' },
+        { key: 'safety',      en: 'Safety Awareness', zh: '安全意識', descEn: 'Follows hygiene & safety rules', descZh: '遵守衛生與安全規範' },
+      ];
+      const EXTRA_P3_ITEMS = [
+        { key: 'op_skill',  en: 'Operation Skill',  zh: '操作能力', descEn: 'Accuracy & stability in machine operation', descZh: '機台操作準確度與穩定度' },
+        { key: 'prob_resp', en: 'Problem Response', zh: '問題應對', descEn: 'Correctly reports faults', descZh: '遇異常能正確回報' },
+      ];
+      const P1_TASKS = [
+        { en:'Clean around machine', zh:'清潔機台周邊' },
+        { en:'Clean floors', zh:'清潔地板' },
+        { en:'Clean workbenches', zh:'清潔工作檯面' },
+        { en:'Refill pouches', zh:'補充包裝袋' },
+        { en:'Refill lids', zh:'補充蓋子' },
+        { en:'Assist moving finished trays', zh:'協助搬運成品托盤' },
+        { en:'Organise packaging materials', zh:'整理包裝材料' },
+      ];
+      const P2_TASKS = [
+        { en:'Machine area names & functions', zh:'機台各區域名稱與功能' },
+        { en:'Normal operation flow overview', zh:'正常運作流程概述' },
+        { en:'Observe: sound, speed, warning lights', zh:'觀察方式：聲音、速度、警示燈' },
+        { en:'Pre-start checks (supervised)', zh:'基本開機前檢查（監督下）' },
+        { en:'Standard cleaning SOP walkthrough', zh:'清潔 SOP 標準流程' },
+      ];
+      const P3_TASKS = [
+        { en:'Full machine operation flow', zh:'完整機台操作流程' },
+        { en:'Product changeover procedure', zh:'換產品操作' },
+        { en:'Settings adjustment', zh:'調整設定' },
+        { en:'Identify & report common faults', zh:'常見異常的判斷與回報' },
+        { en:'Safety rules for high-risk operations', zh:'高風險操作安全規範' },
+        { en:'How to use Setting Record', zh:'如何查閱 Setting Record' },
+        { en:'Shift handover communication', zh:'交班溝通基本要求' },
+      ];
+      const P1_TAGS = [
+        {v:'positive',    en:'💪 Positive attitude',              zh:'💪 態度積極'},
+        {v:'questions',   en:'❓ Asked questions',                zh:'❓ 主動問問題'},
+        {v:'slow_genuine',en:'🐢 Slow but genuine',              zh:'🐢 速度慢但認真'},
+        {v:'passive',     en:'😐 Passive, waited for instruction',zh:'😐 被動等指示'},
+        {v:'safety_low',  en:'⚠️ Safety awareness needs improvement',zh:'⚠️ 安全意識需加強'},
+        {v:'attitude',    en:'🚩 Attitude concern flagged',       zh:'🚩 態度問題，需關注'},
+      ];
+      const P2_TAGS = [
+        {v:'good_learn', en:'💪 Good learning attitude',  zh:'💪 學習態度好'},
+        {v:'attentive',  en:'🔍 Attentive observer',      zh:'🔍 觀察仔細'},
+        {v:'good_assist',en:'🤝 Good at assisting',       zh:'🤝 輔助配合度高'},
+        {v:'good_q',     en:'❓ Asked good questions',    zh:'❓ 問了好問題'},
+        {v:'reminders',  en:'😐 Needs constant reminders',zh:'😐 需要不斷提醒'},
+        {v:'safety_low', en:'⚠️ Safety rules need reinforcing',zh:'⚠️ 安全規範需要加強'},
+      ];
+
+      const TRAINING_TRANSLATIONS = {
+        en: {
+          tabs: [
+            '🟢 Phase 1<br><small>Day 1–3</small>',
+            '🟡 Phase 2<br><small>Day 4–7</small>',
+            '🔴 Phase 3<br><small>Week 2</small>'
+          ],
+          summary: 'Summary',
+          phaseTitles: [
+            '🟢 Phase 1 — Attitude Observation (Day 1–3)',
+            '🟡 Phase 2 — Support Role Training (Day 4–7)',
+            '🔴 Phase 3 — Full Operation (Week 2+)'
+          ],
+          phaseDescriptions: [
+            'Core question: Is this person worth investing further training time?',
+            'Goal: Assist machine operation under supervision. All tasks require trainer presence.',
+            'Goal: Build independent operation skills including fault handling and shift handover.'
+          ],
+          date: '📅 Date:',
+          tasks: '✅ Tasks / Training Content',
+          attitude: '📊 Attitude Score (1=Poor / 2=Average / 3=Good)',
+          item: 'Item',
+          description: 'Description',
+          score: 'Score',
+          quickTags: '🏷️ Quick Tags',
+          trainerNotes: '💬 Trainer Notes',
+          notesPlaceholder: 'One sentence is enough...',
+          dailyTotal: 'Daily Total',
+          dayTitle: number => `Day ${number}`,
+          week2: 'Day 2 (Week 2)',
+          phaseDecision: phase => `🔑 Phase ${phase} End Decision`,
+          decisionNotes: 'Decision Notes',
+          optionalNotes: 'Optional notes...',
+          decisions: {
+            1: [
+              '✅ PASS — Proceed to Phase 2',
+              '⏳ EXTEND — Observe 1–2 more days',
+              '🚩 REPORT — Escalate to supervisor'
+            ],
+            2: [
+              '✅ PROCEED — Enter Phase 3',
+              '⏳ EXTEND — Extra week of Phase 2',
+              '🚩 REPORT — Escalate to supervisor'
+            ],
+            3: [
+              '✅ READY for independent operation',
+              '⏳ CONTINUE supervised operation'
+            ]
+          },
+          finalOptions: [
+            '✅ Ready for independent operation',
+            '🔁 Continue supervised operation for another week',
+            '⚠️ Support role only — not ready for independent operation',
+            '🚩 Further action required — see notes'
+          ],
+          overallPlaceholder: '3–5 sentences: strengths, areas for improvement, recommended next step...'
+        },
+        zh: {
+          tabs: [
+            '🟢 第一階段<br><small>第 1–3 天</small>',
+            '🟡 第二階段<br><small>第 4–7 天</small>',
+            '🔴 第三階段<br><small>第二週</small>'
+          ],
+          summary: '訓練總結',
+          phaseTitles: [
+            '🟢 第一階段 — 態度觀察（第 1–3 天）',
+            '🟡 第二階段 — 輔助操作訓練（第 4–7 天）',
+            '🔴 第三階段 — 完整操作訓練（第二週起）'
+          ],
+          phaseDescriptions: [
+            '核心問題：這位受訓者是否值得繼續投入訓練時間？',
+            '目標：在訓練者監督下協助機台操作，所有工作均需由訓練者在場指導。',
+            '目標：建立獨立操作能力，包括異常處理與交班溝通。'
+          ],
+          date: '📅 日期：',
+          tasks: '✅ 工作／訓練內容',
+          attitude: '📊 態度評分（1＝需改善／2＝一般／3＝良好）',
+          item: '評分項目',
+          description: '說明',
+          score: '分數',
+          quickTags: '🏷️ 快速標籤',
+          trainerNotes: '💬 訓練者備註',
+          notesPlaceholder: '簡短填寫一句話即可……',
+          dailyTotal: '當日總分',
+          dayTitle: number => `第 ${number} 天`,
+          week2: '第二週',
+          phaseDecision: phase => `🔑 第 ${phase} 階段結束評估`,
+          decisionNotes: '評估備註',
+          optionalNotes: '選填備註……',
+          decisions: {
+            1: [
+              '✅ 通過 — 進入第二階段',
+              '⏳ 延長 — 再觀察 1–2 天',
+              '🚩 回報 — 提交主管進一步評估'
+            ],
+            2: [
+              '✅ 通過 — 進入第三階段',
+              '⏳ 延長 — 額外進行一週第二階段訓練',
+              '🚩 回報 — 提交主管進一步評估'
+            ],
+            3: [
+              '✅ 已準備好獨立操作',
+              '⏳ 繼續在監督下操作'
+            ]
+          },
+          finalOptions: [
+            '✅ 已準備好獨立操作',
+            '🔁 再繼續一週監督操作',
+            '⚠️ 僅適合輔助工作，尚未準備好獨立操作',
+            '🚩 需要進一步處理，請參閱備註'
+          ],
+          overallPlaceholder: '請用 3–5 句說明優點、需改善項目及建議的下一步……'
+        }
+      };
+
+      function updateTrainingLanguage() {
+        const text = TRAINING_TRANSLATIONS[lang];
+        const languageKey = lang === 'zh' ? 'zh' : 'en';
+        const descriptionKey = lang === 'zh' ? 'descZh' : 'descEn';
+
+        ['tab0', 'tab1', 'tab2'].forEach((id, index) => {
+          const tab = document.getElementById(id);
+          if (tab) tab.innerHTML = text.tabs[index];
+        });
+
+        const summaryLabel = document.getElementById('lbl-tab-sum');
+        if (summaryLabel) summaryLabel.textContent = text.summary;
+
+        [1, 2, 3].forEach((phase, index) => {
+          const title = document.getElementById(`ph${phase}-title`);
+          const description = document.getElementById(`ph${phase}-desc`);
+          if (title) title.textContent = text.phaseTitles[index];
+          if (description) description.textContent = text.phaseDescriptions[index];
+        });
+
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const block = document.getElementById(`block-${pfx}`);
+          if (!block) return;
+
+          const phase = Number(pfx.charAt(1));
+          const dayNumber = pfx === 'p3_dw2' ? null : pfx.split('_d')[1];
+          const tasks = pfx.startsWith('p1') ? P1_TASKS : pfx.startsWith('p2') ? P2_TASKS : P3_TASKS;
+          const tags = pfx.startsWith('p1') ? P1_TAGS : P2_TAGS;
+
+          const dayTitle = block.querySelector('.day-title');
+          if (dayTitle) dayTitle.textContent = dayNumber ? text.dayTitle(dayNumber) : text.week2;
+
+          const dateLabel = block.querySelector('.date-field label');
+          if (dateLabel) dateLabel.textContent = text.date;
+
+          const sectionTitles = block.querySelectorAll('.section-title');
+          if (sectionTitles[0]) sectionTitles[0].textContent = text.tasks;
+          if (sectionTitles[1]) sectionTitles[1].textContent = text.attitude;
+          if (sectionTitles[2]) sectionTitles[2].textContent = text.quickTags;
+          if (sectionTitles[3]) sectionTitles[3].textContent = text.trainerNotes;
+
+          block.querySelectorAll('.checklist li span').forEach((span, index) => {
+            if (tasks[index]) span.textContent = tasks[index][languageKey];
+          });
+
+          const headings = block.querySelectorAll('.score-table thead th');
+          if (headings[0]) headings[0].textContent = text.item;
+          if (headings[1]) headings[1].textContent = text.description;
+          if (headings[2]) headings[2].textContent = text.score;
+
+          const scoreRows = block.querySelectorAll('.score-table tbody tr:not(.total-row)');
+          scoreRows.forEach((row, index) => {
+            const item = items[index];
+            if (!item) return;
+            const strong = row.querySelector('td:first-child strong');
+            const descriptions = row.querySelectorAll('.desc');
+            if (strong) strong.textContent = item[languageKey];
+            descriptions.forEach(el => {
+              el.textContent = item[descriptionKey];
+            });
+          });
+
+          const totalLabel = block.querySelector('.total-row td:first-child strong');
+          if (totalLabel) totalLabel.textContent = text.dailyTotal;
+
+          block.querySelectorAll('.tags-grid .tag-label').forEach((label, index) => {
+            if (tags[index]) label.textContent = tags[index][languageKey];
+          });
+
+          const trainerNote = document.getElementById(`${pfx}_note`);
+          if (trainerNote) trainerNote.placeholder = text.notesPlaceholder;
+
+          const decisionBlock = block.querySelector('.decision-block');
+          if (decisionBlock) {
+            const heading = decisionBlock.querySelector('h4');
+            if (heading) heading.textContent = text.phaseDecision(phase);
+
+            decisionBlock.querySelectorAll('.decision-option label').forEach((label, index) => {
+              if (text.decisions[phase][index]) {
+                label.textContent = text.decisions[phase][index];
+              }
+            });
+
+            if (sectionTitles[4]) sectionTitles[4].textContent = text.decisionNotes;
+
+            const decisionNote = document.getElementById(`p${phase}_dec_note`);
+            if (decisionNote) decisionNote.placeholder = text.optionalNotes;
+          }
+        });
+
+        document.querySelectorAll('input[name="final_dec"] + label').forEach((label, index) => {
+          if (text.finalOptions[index]) label.textContent = text.finalOptions[index];
+        });
+
+        const overallNote = document.getElementById('overall_note');
+        if (overallNote) overallNote.placeholder = text.overallPlaceholder;
+      }
+
+      function buildDay(phase, dayNum, labelDay, tasks, attItems, tags, showDecision, maxScore) {
+        const pfx = `p${phase}_d${dayNum}`;
+        const el = document.createElement('div');
+        el.className = 'day-block';
+        el.id = `block-${pfx}`;
+        const hdr = document.createElement('div');
+        hdr.className = 'day-header';
+        hdr.innerHTML = `<div><div class="day-title">Day ${labelDay}</div></div><div style="display:flex;align-items:center;gap:10px"><span class="day-score" id="chip-${pfx}">—/${maxScore}</span><span class="chevron" id="chev-${pfx}">▼</span></div>`;
+        hdr.onclick = () => toggleDay(pfx);
+        el.appendChild(hdr);
+        const body = document.createElement('div');
+        body.className = 'day-body';
+        body.id = `body-${pfx}`;
+        if (phase === 1 && dayNum === 1) body.classList.add('open');
+        let html = '';
+        html += `<div class="date-field"><label>📅 Date:</label><input type="date" id="${pfx}_date" onchange="autoSave()"></div>`;
+        let taskHtml = `<div class="section-title">✅ Tasks / Training Content</div><ul class="checklist">`;
+        tasks.forEach((t, i) => {
+          const id = `${pfx}_task_${i}`;
+          taskHtml += `<li><label><input type="checkbox" id="${id}" onchange="autoSave()"> <span>${t.en}</span></label></li>`;
+        });
+        taskHtml += `</ul>`;
+        html += taskHtml;
+        html += `<div class="section-title">📊 Attitude Score (1=Poor / 2=Average / 3=Good)</div><table class="score-table"><thead><tr><th>Item</th><th>Description</th><th>Score</th></tr></thead><tbody id="tbl-${pfx}"></tbody></table>`;
+        html += `<div class="section-title">🏷️ Quick Tags</div><div class="tags-grid" id="tags-${pfx}"></div>`;
+        html += `<div class="section-title">💬 Trainer Notes</div><textarea class="notes-area" id="${pfx}_note" rows="3" placeholder="One sentence is enough..." oninput="autoSave()"></textarea>`;
+        if (showDecision) {
+          const decKey = `p${phase}_dec`;
+          const noteKey = `p${phase}_dec_note`;
+          const scoreKey = `sum-p${phase}`;
+          html += `<div class="decision-block"><h4>🔑 Phase ${phase} End Decision</h4><div class="phase-score-display"><span id="${scoreKey}-disp">—</span> / ${maxScore * (phase < 3 ? (phase===1?3:4) : 1)}</div><div class="phase-score-bar"><div class="phase-score-fill" id="bar-p${phase}" style="width:0%"></div></div><div class="decision-options">${phase===1 ? `<div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_pass" value="Pass" onchange="autoSave()"><label for="${decKey}_pass">✅ PASS — Proceed to Phase 2</label></div><div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_ext" value="Extend" onchange="autoSave()"><label for="${decKey}_ext">⏳ EXTEND — Observe 1–2 more days</label></div><div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_rep" value="Report" onchange="autoSave()"><label for="${decKey}_rep">🚩 REPORT — Escalate to supervisor</label></div>` : phase===2 ? `<div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_proc" value="Proceed" onchange="autoSave()"><label for="${decKey}_proc">✅ PROCEED — Enter Phase 3</label></div><div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_ext" value="Extend" onchange="autoSave()"><label for="${decKey}_ext">⏳ EXTEND — Extra week of Phase 2</label></div><div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_rep" value="Report" onchange="autoSave()"><label for="${decKey}_rep">🚩 REPORT — Escalate to supervisor</label></div>` : `<div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_ready" value="Ready" onchange="autoSave()"><label for="${decKey}_ready">✅ READY for independent operation</label></div><div class="decision-option"><input type="radio" name="${decKey}" id="${decKey}_cont" value="Continue" onchange="autoSave()"><label for="${decKey}_cont">⏳ CONTINUE supervised operation</label></div>`}</div><div class="section-title" style="margin-top:10px">Decision Notes</div><textarea class="notes-area" id="${noteKey}" rows="2" placeholder="Optional notes..." oninput="autoSave()"></textarea></div>`;
+        }
+        body.innerHTML = html;
+        el.appendChild(body);
+        setTimeout(() => {
+          const tbody = document.getElementById(`tbl-${pfx}`);
+          if (tbody) {
+            attItems.forEach(item => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td><strong>${item.en}</strong><br><span class="desc">${item.descEn}</span></td><td class="desc">${item.descEn}</td><td><div class="score-radio"><input type="radio" name="${pfx}_${item.key}" id="${pfx}_${item.key}_1" value="1" onchange="calcScores();autoSave()"><label class="score-1" for="${pfx}_${item.key}_1">1</label><input type="radio" name="${pfx}_${item.key}" id="${pfx}_${item.key}_2" value="2" onchange="calcScores();autoSave()"><label class="score-2" for="${pfx}_${item.key}_2">2</label><input type="radio" name="${pfx}_${item.key}" id="${pfx}_${item.key}_3" value="3" onchange="calcScores();autoSave()"><label class="score-3" for="${pfx}_${item.key}_3">3</label></div></td>`;
+              tbody.appendChild(tr);
+            });
+            const tot = document.createElement('tr');
+            tot.className = 'total-row';
+            tot.innerHTML = `<td colspan="2"><strong>Daily Total</strong></td><td><span class="day-total-chip" id="tot-${pfx}">— / ${maxScore}</span></td>`;
+            tbody.appendChild(tot);
+          }
+          const tagsCont = document.getElementById(`tags-${pfx}`);
+          if (tagsCont) {
+            tags.forEach(tag => {
+              tagsCont.innerHTML += `<input type="checkbox" class="tag-checkbox" id="tag-${pfx}-${tag.v}" value="${tag.v}" onchange="autoSave()"><label class="tag-label" for="tag-${pfx}-${tag.v}">${tag.en}</label>`;
+            });
+          }
+        }, 0);
+        return el;
+      }
+
+      function buildAllDays() {
+        const p1 = document.getElementById('phase1-days');
+        const p2 = document.getElementById('phase2-days');
+        const p3 = document.getElementById('phase3-days');
+        [1,2,3].forEach(d => { p1.appendChild(buildDay(1, d, d, P1_TASKS, ATTITUDE_ITEMS, P1_TAGS, d===3, 15)); });
+        [4,5,6,7].forEach((d, i) => { p2.appendChild(buildDay(2, d, d, P2_TASKS, ATTITUDE_ITEMS, P2_TAGS, i===3, 15)); });
+        p3.appendChild(buildDay(3, 'w2', '2 (Week 2)', P3_TASKS, [...ATTITUDE_ITEMS, ...EXTRA_P3_ITEMS], P2_TAGS, true, 21));
+      }
+
+      function switchTab(idx) {
+        document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+        document.querySelectorAll('.tab-content').forEach((c,i) => c.classList.toggle('active', i===idx));
+        if (idx === 3) updateSummary();
+      }
+      function toggleDay(pfx) {
+        const body = document.getElementById(`body-${pfx}`);
+        const chev = document.getElementById(`chev-${pfx}`);
+        const open = body.classList.toggle('open');
+        chev.textContent = open ? '▲' : '▼';
+      }
+
+      const DAY_KEYS = [
+        {pfx:'p1_d1', items: ATTITUDE_ITEMS}, {pfx:'p1_d2', items: ATTITUDE_ITEMS}, {pfx:'p1_d3', items: ATTITUDE_ITEMS},
+        {pfx:'p2_d4', items: ATTITUDE_ITEMS}, {pfx:'p2_d5', items: ATTITUDE_ITEMS}, {pfx:'p2_d6', items: ATTITUDE_ITEMS}, {pfx:'p2_d7', items: ATTITUDE_ITEMS},
+        {pfx:'p3_dw2', items: [...ATTITUDE_ITEMS, ...EXTRA_P3_ITEMS]},
+      ];
+
+      function getDayScore(pfx, items) {
+        let total = 0;
+        items.forEach(item => {
+          const el = document.querySelector(`input[name="${pfx}_${item.key}"]:checked`);
+          if (el) total += parseInt(el.value);
+        });
+        return total;
+      }
+
+      function calcScores() {
+        let grand = 0;
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const s = getDayScore(pfx, items);
+          const max = items.length * 3;
+          const chip = document.getElementById(`chip-${pfx}`);
+          const tot = document.getElementById(`tot-${pfx}`);
+          if (chip) chip.textContent = s > 0 ? `${s}/${max}` : `—/${max}`;
+          if (tot) tot.textContent = s > 0 ? `${s} / ${max}` : `— / ${max}`;
+          grand += s;
+        });
+        const gc = document.getElementById('grand-chip');
+        if (gc) gc.textContent = `Total: ${grand || '—'} / 126`;
+        const p1 = getDayScore('p1_d1',ATTITUDE_ITEMS)+getDayScore('p1_d2',ATTITUDE_ITEMS)+getDayScore('p1_d3',ATTITUDE_ITEMS);
+        const p2 = getDayScore('p2_d4',ATTITUDE_ITEMS)+getDayScore('p2_d5',ATTITUDE_ITEMS)+getDayScore('p2_d6',ATTITUDE_ITEMS)+getDayScore('p2_d7',ATTITUDE_ITEMS);
+        const p3 = getDayScore('p3_dw2',[...ATTITUDE_ITEMS,...EXTRA_P3_ITEMS]);
+        const setPhaseDisplay = (n, score, max, pass) => {
+          const disp = document.getElementById(`sum-p${n}-disp`);
+          const bar = document.getElementById(`bar-p${n}`);
+          if (disp) disp.textContent = score || '—';
+          if (bar) bar.style.width = max > 0 ? `${Math.min(100,(score/max)*100)}%` : '0%';
+          if (bar && score >= pass) bar.style.background = 'var(--green)';
+          else if (bar) bar.style.background = 'var(--orange)';
+        };
+        setPhaseDisplay(1,p1,45,36); setPhaseDisplay(2,p2,60,48); setPhaseDisplay(3,p3,21,17);
+      }
+
+      function updateSummary() {
+        const p1 = getDayScore('p1_d1',ATTITUDE_ITEMS)+getDayScore('p1_d2',ATTITUDE_ITEMS)+getDayScore('p1_d3',ATTITUDE_ITEMS);
+        const p2 = getDayScore('p2_d4',ATTITUDE_ITEMS)+getDayScore('p2_d5',ATTITUDE_ITEMS)+getDayScore('p2_d6',ATTITUDE_ITEMS)+getDayScore('p2_d7',ATTITUDE_ITEMS);
+        const p3 = getDayScore('p3_dw2',[...ATTITUDE_ITEMS,...EXTRA_P3_ITEMS]);
+        const grand = p1+p2+p3;
+        const statusBadge = (score, pass) => {
+          if (!score) return '—';
+          if (score >= pass) return '✅ Pass';
+          if (score >= pass*0.7) return '⏳ Extend';
+          return '🚩 Report';
+        };
+        document.getElementById('sum-p1').textContent = p1 || '—';
+        document.getElementById('sum-p2').textContent = p2 || '—';
+        document.getElementById('sum-p3').textContent = p3 || '—';
+        document.getElementById('sum-grand').textContent = grand || '—';
+        document.getElementById('sum-p1-status').textContent = statusBadge(p1,36);
+        document.getElementById('sum-p2-status').textContent = statusBadge(p2,48);
+        document.getElementById('sum-p3-status').textContent = statusBadge(p3,17);
+        const gs = document.getElementById('sum-grand-status');
+        if (gs) gs.textContent = grand >= 101 ? '✅ Pass' : grand > 0 ? '⏳ Review' : '—';
+      }
+
+      function getFormData() {
+        const data = {};
+        ['trainee_name','trainer_name','machine_line','shift','start_date','overall_note'].forEach(id => {
+          const el = document.getElementById(id); if (el) data[id] = el.value;
+        });
+        data['final_decision'] = getRadio('final_dec');
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const dateEl = document.getElementById(`${pfx}_date`);
+          if (dateEl) data[`${pfx}_date`] = dateEl.value;
+          items.forEach(item => { data[`${pfx}_${item.key}`] = getRadioVal(`${pfx}_${item.key}`); });
+          const noteEl = document.getElementById(`${pfx}_note`);
+          if (noteEl) data[`${pfx}_note`] = noteEl.value;
+          const dayTasks = pfx.startsWith('p1') ? P1_TASKS : pfx.startsWith('p2') ? P2_TASKS : P3_TASKS;
+          dayTasks.forEach((_,i) => { const cb = document.getElementById(`${pfx}_task_${i}`); if (cb) data[`${pfx}_task_${i}`] = cb.checked; });
+          const allTags = pfx.startsWith('p1') ? P1_TAGS : P2_TAGS;
+          allTags.forEach(tag => { const cb = document.getElementById(`tag-${pfx}-${tag.v}`); if (cb) data[`tag_${pfx}_${tag.v}`] = cb.checked; });
+        });
+        ['p1_dec','p2_dec','p3_dec'].forEach(name => { data[name] = getRadio(name); });
+        ['p1_dec_note','p2_dec_note','p3_dec_note'].forEach(id => { const el = document.getElementById(id); if (el) data[id] = el.value; });
+        const p1 = getDayScore('p1_d1',ATTITUDE_ITEMS)+getDayScore('p1_d2',ATTITUDE_ITEMS)+getDayScore('p1_d3',ATTITUDE_ITEMS);
+        const p2 = getDayScore('p2_d4',ATTITUDE_ITEMS)+getDayScore('p2_d5',ATTITUDE_ITEMS)+getDayScore('p2_d6',ATTITUDE_ITEMS)+getDayScore('p2_d7',ATTITUDE_ITEMS);
+        const p3 = getDayScore('p3_dw2',[...ATTITUDE_ITEMS,...EXTRA_P3_ITEMS]);
+        data.phase1_total = p1; data.phase2_total = p2; data.phase3_total = p3;
+        data.grand_total = p1+p2+p3;
+        data.submitted_at = new Date().toISOString();
+        data.record_id = loadedRecordId;
+        DAY_KEYS.forEach(({pfx, items}) => { data[`${pfx}_score`] = getDayScore(pfx, items); });
+        return data;
+      }
+
+      function getRadio(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; }
+      function getRadioVal(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; }
+
+      function autoSave() {
+        try { const data = getFormData(); localStorage.setItem('training_log_draft', JSON.stringify(data)); } catch(e) {}
+        calcScores();
+      }
+
+      function loadFromStorage(data) {
+        if (!data) return;
+        ['trainee_name','trainer_name','machine_line','shift','start_date','overall_note'].forEach(id => {
+          const el = document.getElementById(id); if (el && data[id] !== undefined) el.value = data[id];
+        });
+        if (data.final_decision) { const el = document.querySelector(`input[name="final_dec"][value="${data.final_decision}"]`); if (el) el.checked = true; }
+        DAY_KEYS.forEach(({pfx, items}) => {
+          const dateEl = document.getElementById(`${pfx}_date`);
+          if (dateEl && data[`${pfx}_date`]) dateEl.value = data[`${pfx}_date`];
+          items.forEach(item => { const val = data[`${pfx}_${item.key}`]; if (val) { const el = document.querySelector(`input[name="${pfx}_${item.key}"][value="${val}"]`); if (el) el.checked = true; } });
+          const noteEl = document.getElementById(`${pfx}_note`);
+          if (noteEl && data[`${pfx}_note`]) noteEl.value = data[`${pfx}_note`];
+          const dayTasks = pfx.startsWith('p1') ? P1_TASKS : pfx.startsWith('p2') ? P2_TASKS : P3_TASKS;
+          dayTasks.forEach((_,i) => { const cb = document.getElementById(`${pfx}_task_${i}`); if (cb && data[`${pfx}_task_${i}`] !== undefined) cb.checked = data[`${pfx}_task_${i}`]; });
+          const allTags = pfx.startsWith('p1') ? P1_TAGS : P2_TAGS;
+          allTags.forEach(tag => { const cb = document.getElementById(`tag-${pfx}-${tag.v}`); if (cb && data[`tag_${pfx}_${tag.v}`] !== undefined) cb.checked = data[`tag_${pfx}_${tag.v}`]; });
+        });
+        ['p1_dec','p2_dec','p3_dec'].forEach(name => { if (data[name]) { const el = document.querySelector(`input[name="${name}"][value="${data[name]}"]`); if (el) el.checked = true; } });
+        ['p1_dec_note','p2_dec_note','p3_dec_note'].forEach(id => { const el = document.getElementById(id); if (el && data[id]) el.value = data[id]; });
+        calcScores();
+      }
+
+      function resetForm() {
+        ['trainee_name','trainer_name','machine_line','shift','start_date','overall_note'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        document.querySelectorAll('input[type="radio"]').forEach(el => { el.checked = false; });
+        document.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
+        document.querySelectorAll('textarea').forEach(el => { el.value = ''; });
+        document.querySelectorAll('.day-body input[type="date"]').forEach(el => { el.value = ''; });
+        calcScores();
+      }
+
+      function setMode(mode) {
+        if (mode === 'new') {
+          const hasData = document.getElementById('trainee_name').value.trim() !== '' ||
+                          document.getElementById('trainer_name').value.trim() !== '' ||
+                          document.querySelector('input[type="radio"]:checked') !== null;
+          if (hasData) {
+            const confirmed = confirm(
+              '⚠️ Start a new trainee record?\n\n' +
+              'All current form data (including scores) will be cleared.\n' +
+              'Make sure you have submitted the current record before switching.\n\n' +
+              'Click OK to clear and start fresh, or Cancel to keep the current data.'
+            );
+            if (!confirmed) return;
+            resetForm();
+          }
+        }
+        currentMode = mode;
+        document.getElementById('btn-new').classList.toggle('active', mode==='new');
+        document.getElementById('btn-load').classList.toggle('active', mode==='load');
+        const lp = document.getElementById('load-panel');
+        const ms = document.getElementById('mode-status');
+        if (mode === 'new') {
+          lp.classList.remove('visible');
+          ms.innerHTML = `<span class="status-badge status-new">✨ New record — will create new row in Sheets</span>`;
+          loadedRecordId = null;
+        } else {
+          lp.classList.add('visible');
+          ms.innerHTML = `<span class="status-badge status-loaded">📂 Load mode — select a trainee to load previous data</span>`;
+          fetchTraineeList();
+        }
+      }
+
+      async function fetchTraineeList() {
+        const sel = document.getElementById('trainee-select');
+        sel.innerHTML = '<option value="">⏳ Loading from Google Sheets...</option>';
+        try {
+          const res = await fetch(`${SHEET_URL}?action=list`);
+          const json = await res.json();
+          traineeListCache = json.trainees || [];
+          if (traineeListCache.length === 0) {
+            sel.innerHTML = '<option value="">— No records found —</option>';
+          } else {
+            sel.innerHTML = '<option value="">-- Select trainee --</option>';
+            traineeListCache.forEach(t => {
+              const opt = document.createElement('option');
+              opt.value = t.record_id;
+              opt.textContent = `${t.trainee_name} — ${t.trainer_name} (Start: ${t.start_date || 'N/A'})`;
+              sel.appendChild(opt);
+            });
+          }
+        } catch(e) {
+          sel.innerHTML = `<option value="">❌ Failed to load — check Apps Script URL</option>`;
+          showToast('❌ Could not reach Google Sheets');
+        }
+      }
+
+      async function loadSelectedTrainee() {
+        const sel = document.getElementById('trainee-select');
+        const recordId = sel.value;
+        if (!recordId) { showToast('⚠️ Please select a trainee first'); return; }
+        const btn = document.getElementById('btn-do-load');
+        btn.innerHTML = '<span class="spinner"></span>';
+        btn.disabled = true;
+        try {
+          const res = await fetch(`${SHEET_URL}?action=get&record_id=${encodeURIComponent(recordId)}`);
+          const json = await res.json();
+          if (json.record) {
+            loadedRecordId = recordId;
+            resetForm();
+            loadFromStorage(json.record);
+            document.getElementById('mode-status').innerHTML = `<span class="status-badge status-loaded">✏️ Editing: <strong>${json.record.trainee_name}</strong> — will UPDATE existing row</span>`;
+            showToast(`✅ Loaded: ${json.record.trainee_name}`);
+          } else {
+            showToast('❌ Record not found');
+          }
+        } catch(e) {
+          showToast('❌ Failed to load record');
+        } finally {
+          btn.innerHTML = '📥 <span id="lbl-load-action">Load</span>';
+          btn.disabled = false;
+        }
+      }
+
+      async function submitRecord() {
+        const trainee = document.getElementById('trainee_name').value.trim();
+        if (!trainee) { showToast('⚠️ Please enter Trainee Name first'); return; }
+        const btn = document.getElementById('submit-btn');
+        btn.innerHTML = '<span class="spinner"></span> Submitting...';
+        btn.disabled = true;
+        const data = getFormData();
+        data.submitted_at = new Date().toISOString();
+        try {
+          const res = await fetch(SHEET_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+          if (json.result === 'success') {
+            if (json.record_id) loadedRecordId = json.record_id;
+            const action = data.record_id ? 'updated' : 'created';
+            showToast(`✅ Record ${action} successfully!`);
+            document.getElementById('mode-status').innerHTML = `<span class="status-badge status-loaded">✅ Saved — editing <strong>${trainee}</strong> (row updated)</span>`;
+            if (!data.record_id && json.record_id) loadedRecordId = json.record_id;
+          } else {
+            showToast('❌ Error: ' + (json.error || 'Unknown error'));
+          }
+        } catch(e) {
+          showToast('❌ Network error — check connection');
+        } finally {
+          btn.innerHTML = '☁️ <span id="lbl-submit">Submit to Sheets</span>';
+          btn.disabled = false;
+        }
+      }
+
+      function clearForm() {
+        if (!confirm('Clear all data and start fresh?')) return;
+        localStorage.removeItem('training_log_draft');
+        location.reload();
+      }
+
+      function exportReport() {
+        const data = getFormData();
+        let txt = `MACHINE OPERATOR TRAINING REPORT\n${'='.repeat(40)}\n`;
+        txt += `Trainee: ${data.trainee_name || '—'}\nTrainer: ${data.trainer_name || '—'}\nMachine/Line: ${data.machine_line || '—'}\nShift: ${data.shift || '—'}\nStart Date: ${data.start_date || '—'}\n`;
+        txt += `\nSCORES\n${'-'.repeat(20)}\nPhase 1 (Day 1-3): ${data.phase1_total} / 45\nPhase 2 (Day 4-7): ${data.phase2_total} / 60\nPhase 3 (Week 2):  ${data.phase3_total} / 21\nGrand Total:       ${data.grand_total} / 126\n`;
+        txt += `\nDECISIONS\n${'-'.repeat(20)}\nPhase 1: ${data.p1_dec || '—'}\nPhase 2: ${data.p2_dec || '—'}\nPhase 3: ${data.p3_dec || '—'}\nFinal:   ${data.final_decision || '—'}\n`;
+        txt += `\nOVERALL ASSESSMENT\n${'-'.repeat(20)}\n${data.overall_note || '—'}\n\nExported: ${new Date().toLocaleString()}\n`;
+        const blob = new Blob([txt], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `training_${(data.trainee_name||'report').replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.txt`;
+        a.click();
+        showToast('📥 Report exported!');
+      }
+
+      const STRINGS = {
+        en: {
+          'lbl-mode':'Select Mode','lbl-new-btn':'New Trainee','lbl-load-btn':'Load Trainee',
+          'lbl-select-trainee':'Select trainee from Google Sheets','lbl-load-action':'Load',
+          'lbl-info-title':'Trainee Information','lbl-trainee':'Trainee Name *','lbl-trainer':'Trainer Name *',
+          'lbl-machine':'Machine / Line','lbl-shift':'Shift','lbl-start':'Training Start Date',
+          'lbl-tab-sum':'Summary','lbl-sum-title':'Training Summary','lbl-sum-phase':'Phase',
+          'lbl-sum-score':'Score','lbl-sum-max':'Max','lbl-sum-pass':'Pass Line','lbl-sum-status':'Status',
+          'lbl-grand':'Grand Total','lbl-overall':'Overall Assessment','lbl-final':'Final Recommendation',
+          'lbl-clear':'Clear','lbl-export':'Export .txt','lbl-submit':'Submit to Sheets',
+        },
+        zh: {
+          'lbl-mode':'選擇模式','lbl-new-btn':'新增受訓者','lbl-load-btn':'讀取受訓者',
+          'lbl-select-trainee':'從 Google Sheets 選擇受訓者','lbl-load-action':'載入',
+          'lbl-info-title':'受訓者基本資料','lbl-trainee':'受訓員工姓名 *','lbl-trainer':'負責訓練者 *',
+          'lbl-machine':'所屬機台 / 產線','lbl-shift':'排班班別','lbl-start':'訓練開始日期',
+          'lbl-tab-sum':'訓練總結','lbl-sum-title':'訓練評分總覽','lbl-sum-phase':'階段',
+          'lbl-sum-score':'分數','lbl-sum-max':'滿分','lbl-sum-pass':'達標線','lbl-sum-status':'狀態',
+          'lbl-grand':'總計','lbl-overall':'整體評估','lbl-final':'最終建議',
+          'lbl-clear':'清除','lbl-export':'匯出 .txt','lbl-submit':'送出至 Sheets',
+        }
+      };
+      function toggleLang() {
+        lang = lang === 'en' ? 'zh' : 'en';
+        const s = STRINGS[lang];
+        Object.keys(s).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = s[id];
+        });
+        updateTrainingLanguage();
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        buildAllDays();
+        updateTrainingLanguage();
+        setTimeout(() => {
+          const saved = localStorage.getItem('training_log_draft');
+          if (saved) {
+            try {
+              const data = JSON.parse(saved);
+              if (data.trainee_name) {
+                if (confirm(`Resume draft for "${data.trainee_name}"?`)) {
+                  loadFromStorage(data);
+                  if (data.record_id) {
+                    loadedRecordId = data.record_id;
+                    document.getElementById('mode-status').innerHTML = `<span class="status-badge status-loaded">✏️ Resuming: <strong>${data.trainee_name}</strong></span>`;
+                  }
+                }
+              }
+            } catch(e) {}
+          }
+          calcScores();
+        }, 100);
+      });
+    </script>
+  </body>
+</html>
