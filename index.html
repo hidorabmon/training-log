@@ -42,6 +42,21 @@
         font-size: 13px; cursor: pointer; color: var(--text);
       }
       .lang-btn:hover { background: var(--border); }
+      .nav-to-dash {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: #E5F2FC;
+        border: 1px solid #b0d4f3;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2783DE;
+        text-decoration: none;
+        transition: all 0.15s;
+      }
+      .nav-to-dash:hover { background: #cfe5f7; }
       .trainee-manager {
         background: var(--canvas); border-bottom: 1px solid var(--border); padding: 16px 24px;
       }
@@ -254,7 +269,10 @@
         <h1 id="hd-title">🏭 Machine Operator Training Log</h1>
         <div class="subtitle" id="hd-sub">Trainer Daily Evaluation Form</div>
       </div>
-      <button class="lang-btn" onclick="toggleLang()">🌐 中文 / EN</button>
+      <div style="display:flex;align-items:center;gap:10px">
+        <a href="./dashboard.html" class="nav-to-dash">📊 Dashboard</a>
+        <button class="lang-btn" onclick="toggleLang()">🌐 中文 / EN</button>
+      </div>
     </header>
     <div class="trainee-manager">
       <div class="mode-label" id="lbl-mode">Select Mode / 選擇模式</div>
@@ -371,7 +389,7 @@
 
       const ATTITUDE_ITEMS = [
         { key: 'initiative',  en: 'Initiative',       zh: '積極度',   descEn: 'No idle standing; actively finds work', descZh: '不閒站、主動找事做' },
-        { key: 'proactive_q', en: 'Proactive',      zh: '主動詢問', descEn: 'Asks when unsure', descZh: '遇到不懂會主動詢問' },
+        { key: 'proactive_q', en: 'Proactive Q',      zh: '主動詢問', descEn: 'Asks when unsure', descZh: '遇到不懂會主動詢問' },
         { key: 'task_accept', en: 'Task Acceptance',  zh: '接受指派', descEn: 'Positive attitude for difficult tasks', descZh: '分配到辛苦任務態度正面' },
         { key: 'reliability', en: 'Reliability',      zh: '可靠度',   descEn: 'Completes assigned tasks', descZh: '交辦任務有確實完成' },
         { key: 'safety',      en: 'Safety Awareness', zh: '安全意識', descEn: 'Follows hygiene & safety rules', descZh: '遵守衛生與安全規範' },
