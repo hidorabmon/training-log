@@ -270,7 +270,7 @@
         <div class="subtitle" id="hd-sub">Trainer Daily Evaluation Form</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <a href="./dashboard.html" class="nav-to-dash">📊 Dashboard</a>
+        <a href="./dashboard.html" class="nav-to-dash" id="dash-link">📊 Dashboard</a>
         <button class="lang-btn" onclick="toggleLang()">🌐 中文 / EN</button>
       </div>
     </header>
@@ -283,7 +283,7 @@
         </button>
         <button class="mode-btn" id="btn-load" onclick="setMode('load')">
           <span class="icon">📂</span>
-          <span id="lbl-load-btn">Load Trainee / 讀取受訓者</span>
+          <span id="lbl-load-btn">Load Trainee / 讀取受訓���</span>
         </button>
       </div>
       <div class="load-panel" id="load-panel">
@@ -381,7 +381,17 @@
     <div class="toast" id="toast"></div>
     <script>
       const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyMpdguD7BPA6VaoFD8M06LpPNvHLCURyEBa5GWNzP9f7ondvyg7kIQYA_Uq9Qy_p9jEw/exec';
-      const TOKEN = new URLSearchParams(window.location.search).get('token') || '';
+      // Token 現在會存進 sessionStorage,這樣從 Dashboard 切換回來時，
+      // 就算網址上沒有帶 ?token=...，也能保留原本的管理者/一般身份狀態
+      // (sessionStorage 只在同一個瀏覽器分頁存在，分頁關閉就會自動清除，比較安全)
+      const TOKEN = (function () {
+        const urlToken = new URLSearchParams(window.location.search).get('token');
+        if (urlToken) {
+          try { sessionStorage.setItem('yang_admin_token', urlToken); } catch (e) {}
+          return urlToken;
+        }
+        try { return sessionStorage.getItem('yang_admin_token') || ''; } catch (e) { return ''; }
+      })();
       let lang = 'en';
       let currentMode = 'new';
       let loadedRecordId = null;
@@ -915,7 +925,7 @@
             });
           }
         } catch(e) {
-          sel.innerHTML = `<option value="">❌ Failed to load — check Apps Script URL</option>`;
+          sel.innerHTML = `<option value="">❌ Failed to load ��� check Apps Script URL</option>`;
           showToast('❌ Could not reach Google Sheets');
         }
       }
@@ -1040,6 +1050,11 @@
       }
 
       document.addEventListener('DOMContentLoaded', () => {
+        // 將目前的 token 同步加到 Dashboard 連結上，方便未來 dashboard.html 若也需要驗證 token
+        const dashLink = document.getElementById('dash-link');
+        if (dashLink && TOKEN) {
+          dashLink.href = './dashboard.html?token=' + encodeURIComponent(TOKEN);
+        }
         buildAllDays();
         updateTrainingLanguage();
         setTimeout(() => {
