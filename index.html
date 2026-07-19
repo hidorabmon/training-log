@@ -363,6 +363,7 @@
     <div class="toast" id="toast"></div>
     <script>
       const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyMpdguD7BPA6VaoFD8M06LpPNvHLCURyEBa5GWNzP9f7ondvyg7kIQYA_Uq9Qy_p9jEw/exec';
+      const TOKEN = new URLSearchParams(window.location.search).get('token') || '';
       let lang = 'en';
       let currentMode = 'new';
       let loadedRecordId = null;
@@ -881,7 +882,7 @@
         const sel = document.getElementById('trainee-select');
         sel.innerHTML = '<option value="">⏳ Loading from Google Sheets...</option>';
         try {
-          const res = await fetch(`${SHEET_URL}?action=list`);
+          const res = await fetch(`${SHEET_URL}?action=list&token=${encodeURIComponent(TOKEN)}`);
           const json = await res.json();
           traineeListCache = json.trainees || [];
           if (traineeListCache.length === 0) {
@@ -909,7 +910,7 @@
         btn.innerHTML = '<span class="spinner"></span>';
         btn.disabled = true;
         try {
-          const res = await fetch(`${SHEET_URL}?action=get&record_id=${encodeURIComponent(recordId)}`);
+          const res = await fetch(`${SHEET_URL}?action=get&record_id=${encodeURIComponent(recordId)}&token=${encodeURIComponent(TOKEN)}`);
           const json = await res.json();
           if (json.record) {
             loadedRecordId = recordId;
@@ -936,6 +937,7 @@
         btn.disabled = true;
         const data = getFormData();
         data.submitted_at = new Date().toISOString();
+        data.token = TOKEN;
         try {
           const res = await fetch(SHEET_URL, {
             method: 'POST',
