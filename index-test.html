@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Training Log — V3.3 API Test</title>
+  <style>
+    :root{--blue:#2783de;--blueSoft:#e5f2fc;--green:#46a171;--greenSoft:#e8f1ec;--orange:#d5803b;--orangeSoft:#fbebde;--red:#e56458;--redSoft:#fce9e7;--text:#2c2c2b;--muted:#7d7a75;--surface:#f9f8f7;--border:#e6e5e3}
+    *{box-sizing:border-box} body{margin:0;background:var(--surface);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+    header{background:#fff;border-bottom:1px solid var(--border);padding:20px 24px} header>div,main{max-width:820px;margin:auto}.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--blue)}h1{font-size:26px;margin:4px 0}.sub{margin:0;color:var(--muted)}main{padding:28px 20px 64px}.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}.card h2{font-size:17px;margin:0 0 16px}.row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}.field{flex:1;min-width:220px}.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--muted)}input,select,textarea{width:100%;font:inherit;border:1px solid var(--border);border-radius:8px;padding:10px;background:#fff}textarea{min-height:88px;resize:vertical}.btn{min-height:44px;border:1px solid var(--border);border-radius:8px;background:#fff;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn:focus,input:focus,select:focus,textarea:focus{outline:3px solid #b0d4f3;outline-offset:2px}.notice{padding:12px 14px;border-radius:8px;background:var(--blueSoft);color:#315878;margin-bottom:16px}.notice.ok{background:var(--greenSoft);color:#246043}.notice.warn{background:var(--orangeSoft);color:#8b531e}.notice.error{background:var(--redSoft);color:#963a31}.status{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:700;padding:5px 9px;border-radius:20px;background:var(--surface);color:var(--muted)}.checks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.check{border:1px solid var(--border);border-radius:8px;padding:12px;font-size:14px}.check b{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}.good{color:var(--green)}.pending{color:var(--orange)}pre{white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;background:#191919;color:#f3f3f3;border-radius:8px;padding:14px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}@media(max-width:600px){header{padding:16px}.checks{grid-template-columns:1fr}main{padding:20px 16px}.card{padding:18px}h1{font-size:23px}}
+  </style>
+</head>
+<body>
+<header><div><div class="eyebrow">SAFE TEST BRANCH</div><h1>Training Log — V3.3 API Test</h1><p class="sub">Read first. Creating an observation is the only write action on this page.</p></div></header>
+<main>
+  <div id="notice" class="notice">Enter an Admin Token, then run the read-only connection check.</div>
+  <section class="card">
+    <h2>1. Connect to the new deployment</h2>
+    <div class="row"><div class="field"><label for="token">Admin Token</label><input id="token" type="password" autocomplete="off" placeholder="Required for the protected endpoints"></div><button class="btn primary" id="checkBtn">Run read-only check</button></div>
+  </section>
+  <section class="card" id="results" hidden>
+    <h2>2. Read-only results <span class="status" id="version">Checking version…</span></h2>
+    <div class="checks"><div class="check"><b>API version</b><span id="versionResult" class="pending">Pending</span></div><div class="check"><b>Authorised trainees</b><span id="listResult" class="pending">Pending</span></div><div class="check"><b>Selected record</b><span id="recordResult" class="pending">Pending</span></div></div>
+    <div class="row" style="margin-top:18px"><div class="field"><label for="trainee">Trainee</label><select id="trainee"><option>Select after checking</option></select></div><button class="btn" id="loadBtn">Load selected record</button></div>
+  </section>
+  <section class="card" id="reviewCard" hidden>
+    <h2>3. Optional write test — Independent Review</h2>
+    <p class="sub" style="margin-bottom:16px">Only use this after the three read-only checks pass. It writes one clearly labelled test observation to <b>Independent Reviews</b>, never to Records.</p>
+    <div class="row"><div class="field"><label for="observer">Observer name</label><input id="observer" placeholder="e.g. Yang — TEST"></div><div class="field"><label for="recommendation">Recommendation</label><select id="recommendation"><option>Needs ongoing observation</option><option>Recommend reassessment</option><option>Suitable for current role</option><option>Not suitable for current role</option></select></div></div>
+    <div class="field" style="margin-top:12px"><label for="note">Observation note</label><textarea id="note">V3.3 endpoint test — confirm UUID-based review link.</textarea></div>
+    <button class="btn primary" id="createBtn" style="margin-top:14px">Create labelled test observation</button>
+  </section>
+  <section class="card"><h2>Response log</h2><pre id="log">No request run yet.</pre></section>
+</main>
+<script>
+const API='https://script.google.com/macros/s/AKfycbypVzYT6tWdRCSr0JuJvX8nBzYqwBQiguqdA6raIZk1HTNZepMUb5ARvBGuyD3kjmjyqg/exec';
+const $=id=>document.getElementById(id); let trainees=[];
+function show(message,type=''){const el=$('notice');el.textContent=message;el.className='notice '+type}
+function log(label,data){$('log').textContent=`${label}\n${JSON.stringify(data,null,2)}`}
+function setResult(id,text,type){const el=$(id);el.textContent=text;el.className=type}
+async function get(action,params={}){const u=new URL(API);u.searchParams.set('action',action);u.searchParams.set('token',$('token').value.trim());Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);const d=await r.json();if(!r.ok||d.error)throw Error(d.error||`HTTP ${r.status}`);return d}
+$('checkBtn').onclick=async()=>{try{if(!$('token').value.trim())throw Error('Enter an Admin Token first.');show('Running read-only API checks…');$('results').hidden=false;const version=await get('version');$('version').textContent=version.version||'No version';setResult('versionResult',version.version||'Missing version','good');const list=await get('list');trainees=list.trainees||[];if(!trainees.length)throw Error('No authorised trainee records returned.');$('trainee').innerHTML=trainees.map(t=>`<option value="${t.record_id}">${t.trainee_name} — ${t.trainer_name}</option>`).join('');setResult('listResult',`${trainees.length} loaded`,'good');setResult('recordResult','Choose a trainee','pending');$('reviewCard').hidden=false;show('Read-only connection checks passed. Load one record next.','ok');log('Read-only API check',{version,traineeCount:trainees.length,recordIdsAreUUID:trainees.every(t=>String(t.record_id).includes('-'))})}catch(e){show(`Check failed: ${e.message}`,'error');log('Read-only API check failed',{error:e.message})}};
+$('loadBtn').onclick=async()=>{try{const id=$('trainee').value;const record=await get('get',{record_id:id});const stable=String(record.record?.record_id||'').includes('-');setResult('recordResult',stable?'Loaded UUID record':'Loaded, but ID is not UUID',stable?'good':'pending');show(stable?'Selected record loaded with a stable UUID.':'Record loaded; verify migration status. ',stable?'ok':'warn');log('Selected record',record)}catch(e){show(`Record load failed: ${e.message}`,'error');log('Record load failed',{error:e.message})}};
+$('createBtn').onclick=async()=>{try{const trainee=trainees.find(t=>t.record_id===$('trainee').value);if(!trainee)throw Error('Run the read-only check and choose a trainee first.');const observer=$('observer').value.trim();if(!observer)throw Error('Enter an observer name ending in TEST.');const body={action:'review_create',token:$('token').value.trim(),record_id:trainee.record_id,observer_name:observer,observer_role:'Team Leader',observation_date:new Date().toISOString().slice(0,10),observation_context:'V3.3 API endpoint test',observation_note:$('note').value.trim(),recommendation:$('recommendation').value,requires_supervisor_attention:'no'};const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});const d=await r.json();if(d.result!=='success')throw Error(d.error||'Unknown error');show('Test observation created in Independent Reviews. Verify its UUID matches the selected Records row.','ok');log('Write test response',d)}catch(e){show(`Write test failed: ${e.message}`,'error');log('Write test failed',{error:e.message})}};
+</script>
+</body></html>
