@@ -26,6 +26,8 @@ const responsiveCSS=`
   html,body{max-width:100%!important;overflow-x:hidden!important}
   img,video,canvas{max-width:100%!important;height:auto!important}
   .btn-secondary{display:none!important}
+  .review>div:last-child,.observation-text{white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;line-height:1.6!important}
+  #note{min-height:120px!important;resize:vertical!important}
   @media(max-width:600px){
     header,.app-header{padding:12px 14px!important;align-items:flex-start!important;gap:8px!important}
     .actions,.app-header>div:last-child{display:flex!important;flex-wrap:wrap!important;gap:8px!important;justify-content:flex-end!important}
@@ -63,6 +65,15 @@ async function enhance(){
   }
   let page='';
   try{page=frame.contentWindow.location.pathname.split('/').pop()}catch(e){}
+  if(page==='independent-reviews-v2.html'){
+    const note=doc.querySelector('#note');
+    if(note&&!note.dataset.v34Autogrow){
+      note.dataset.v34Autogrow='true';
+      const resize=()=>{note.style.height='auto';note.style.height=Math.max(120,note.scrollHeight)+'px'};
+      note.addEventListener('input',resize);
+      resize();
+    }
+  }
   if(page==='dashboard.html'){
     try{
       const data=await fetch(API+'?action=list&token='+encodeURIComponent(token)).then(r=>r.json());
