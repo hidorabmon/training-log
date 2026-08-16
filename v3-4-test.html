@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Machine Operator Training — V3.4 Test</title>
+  <style>
+    html,body,#app{margin:0;width:100%;height:100%;border:0;background:#f9f8f7}
+    body{overflow:hidden}
+    #app{display:block}
+  </style>
+</head>
+<body>
+<iframe id="app" title="Machine Operator Training V3.4 test"></iframe>
+<script>
+const API='https://script.google.com/macros/s/AKfycbyMpdguD7BPA6VaoFD8M06LpPNvHLCURyEBa5GWNzP9f7ondvyg7kIQYA_Uq9Qy_p9jEw/exec';
+const params=new URLSearchParams(location.search);
+const token=params.get('token')||'';
+const allowed=new Set(['index.html','dashboard.html','independent-reviews-v2.html']);
+const requested=params.get('page')||'index.html';
+const startPage=allowed.has(requested)?requested:'index.html';
+const frame=document.getElementById('app');
+frame.src='./'+startPage+(token?'?token='+encodeURIComponent(token):'');
+
+const responsiveCSS=`
+  html,body{max-width:100%!important;overflow-x:hidden!important}
+  img,video,canvas{max-width:100%!important;height:auto!important}
+  .btn-secondary{display:none!important}
+  @media(max-width:600px){
+    header,.app-header{padding:12px 14px!important;align-items:flex-start!important;gap:8px!important}
+    .actions,.app-header>div:last-child{display:flex!important;flex-wrap:wrap!important;gap:8px!important;justify-content:flex-end!important}
+    .btn,.nav-to-dash,.lang-btn,button,a.btn{min-height:44px!important;padding:10px 12px!important}
+    .main,main{padding:16px 14px 88px!important}
+    .mode-btns{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+    .mode-btn{justify-content:center!important;padding:10px 8px!important}
+    .tabs{overflow-x:auto!important;white-space:nowrap!important;-webkit-overflow-scrolling:touch}
+    .tab{flex:0 0 auto!important;padding:10px 12px!important}
+    .action-bar{padding:10px 12px!important;gap:8px!important;flex-wrap:wrap!important}
+    .grand-total-chip{min-width:0!important;margin-right:auto!important;padding:6px 8px!important}
+    .metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    .grid{grid-template-columns:1fr!important}
+    .full{grid-column:auto!important}
+    .table{overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+    table{max-width:none!important}
+    input,select,textarea{font-size:16px!important;max-width:100%!important}
+    .card{padding:16px!important}
+  }
+  @media(max-width:380px){
+    .metrics,.mode-btns{grid-template-columns:1fr!important}
+    header,.app-header{flex-direction:column!important}
+    .actions,.app-header>div:last-child{width:100%!important;justify-content:flex-start!important}
+  }
+`;
+
+async function enhance(){
+  const doc=frame.contentDocument;
+  if(!doc||!doc.head)return;
+  if(!doc.getElementById('v34-responsive')){
+    const style=doc.createElement('style');
+    style.id='v34-responsive';
+    style.textContent=responsiveCSS;
+    doc.head.appendChild(style);
+  }
+  let page='';
+  try{page=frame.contentWindow.location.pathname.split('/').pop()}catch(e){}
+  if(page==='dashboard.html'){
+    try{
+      const data=await fetch(API+'?action=list&token='+encodeURIComponent(token)).then(r=>r.json());
+      const actions=doc.querySelector('.actions');
+      const back=doc.querySelector('#back');
+      if(data.role==='admin'&&actions&&back&&!doc.getElementById('independentReviewsLink')){
+        const link=doc.createElement('a');
+        link.id='independentReviewsLink';
+        link.className='btn';
+        link.textContent='🧾 Independent Reviews';
+        link.href='./independent-reviews-v2.html?token='+encodeURIComponent(token);
+        actions.insertBefore(link,back);
+      }
+    }catch(e){console.warn('Role check failed',e)}
+  }
+}
+frame.addEventListener('load',()=>enhance().catch(console.error));
+</script>
+</body>
+</html>
