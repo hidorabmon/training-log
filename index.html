@@ -29,12 +29,21 @@ if(startPage==='index.html'){
 }else{
   frame.src='./'+startPage+(token?'?token='+encodeURIComponent(token):'');
 }
+function roleLabel(role, lang){
+  const zh=lang!=='en';
+  if(role==='admin')return zh?'👑 管理者模式':'👑 Admin';
+  if(role==='trainer')return zh?'🧑‍🏫 訓練員模式':'🧑‍🏫 Trainer';
+  return zh?'🔓 一般模式':'🔓 Public';
+}
+function roleClass(role){return role==='admin'?'role-admin':role==='trainer'?'role-trainer':'role-public'}
 const responsiveCSS=`
   html,body{max-width:100%!important;overflow-x:hidden!important}
   img,video,canvas{max-width:100%!important;height:auto!important}
   .btn-secondary{display:none!important}
   .review>div:last-child,.observation-text{white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;line-height:1.6!important}
   #note{min-height:120px!important;resize:vertical!important}
+  .yang-role-status{display:inline-flex!important;align-items:center!important;gap:6px!important;margin-top:6px!important;font-weight:800!important;font-size:12px!important;background:transparent!important;border:0!important;padding:0!important;cursor:default!important;white-space:nowrap!important}
+  .yang-role-status.role-admin{color:#7a5200!important}.yang-role-status.role-trainer{color:#2d6b49!important}.yang-role-status.role-public{color:#666!important}
   @media(max-width:600px){
     header,.app-header{padding:12px 14px!important;align-items:flex-start!important;gap:8px!important}
     .actions,.app-header>div:last-child{display:flex!important;flex-wrap:wrap!important;gap:8px!important;justify-content:flex-end!important}
@@ -53,6 +62,7 @@ const responsiveCSS=`
     table{max-width:none!important}
     input,select,textarea{font-size:16px!important;max-width:100%!important}
     .card{padding:16px!important}
+    .yang-role-status{font-size:0!important}.yang-role-status::first-letter{font-size:16px!important}
     #decisionCenterLink,#independentReviewsLink,#back{font-size:0!important;min-width:44px!important;text-align:center!important}
     #decisionCenterLink::before{content:'🧭';font-size:16px!important}
     #independentReviewsLink::before{content:'🧾';font-size:16px!important}
@@ -84,33 +94,44 @@ async function enhance(){
       resize();
     }
   }
+  let data={role:token?'trainer':'public'};
+  if(page==='dashboard.html'||page===''||page==='index.html'){
+    try{data=await fetch(API+'?action=list&token='+encodeURIComponent(token)).then(r=>r.json())}catch(e){console.warn('Role check failed',e)}
+  }
+  if(page===''||page==='index.html'){
+    const titleHost=doc.querySelector('header>div:first-child,.app-header>div:first-child,header,.app-header');
+    if(titleHost&&!doc.getElementById('yangRoleStatus')){
+      const badge=doc.createElement('div');
+      badge.id='yangRoleStatus';
+      badge.className='yang-role-status '+roleClass(data.role||'public');
+      badge.textContent=roleLabel(data.role||'public',doc.documentElement.lang||'zh');
+      titleHost.appendChild(badge);
+    }
+  }
   if(page==='dashboard.html'){
-    try{
-      const data=await fetch(API+'?action=list&token='+encodeURIComponent(token)).then(r=>r.json());
-      const actions=doc.querySelector('.actions');
-      const back=doc.querySelector('#back');
-      if(back){back.textContent='📝 Training Log';back.title='Training Log';back.setAttribute('aria-label','Training Log')}
-      if(data.role==='admin'&&actions&&back&&!doc.getElementById('decisionCenterLink')){
-        const decisionLink=doc.createElement('a');
-        decisionLink.id='decisionCenterLink';
-        decisionLink.className='btn';
-        decisionLink.textContent='🧭 Manager Decision Center';
-        decisionLink.title='Manager Decision Center';
-        decisionLink.setAttribute('aria-label','Manager Decision Center');
-        decisionLink.href='./dashboard-decision-test.html?token='+encodeURIComponent(token);
-        actions.insertBefore(decisionLink,back);
-      }
-      if(data.role==='admin'&&actions&&back&&!doc.getElementById('independentReviewsLink')){
-        const link=doc.createElement('a');
-        link.id='independentReviewsLink';
-        link.className='btn';
-        link.textContent='🧾 Independent Reviews';
-        link.title='Independent Reviews';
-        link.setAttribute('aria-label','Independent Reviews');
-        link.href='./independent-reviews-v2.html?token='+encodeURIComponent(token);
-        actions.insertBefore(link,back);
-      }
-    }catch(e){console.warn('Role check failed',e)}
+    const actions=doc.querySelector('.actions');
+    const back=doc.querySelector('#back');
+    if(back){back.textContent='📝 Training Log';back.title='Training Log';back.setAttribute('aria-label','Training Log')}
+    if(data.role==='admin'&&actions&&back&&!doc.getElementById('decisionCenterLink')){
+      const decisionLink=doc.createElement('a');
+      decisionLink.id='decisionCenterLink';
+      decisionLink.className='btn';
+      decisionLink.textContent='🧭 Manager Decision Center';
+      decisionLink.title='Manager Decision Center';
+      decisionLink.setAttribute('aria-label','Manager Decision Center');
+      decisionLink.href='./dashboard-decision-test.html?token='+encodeURIComponent(token);
+      actions.insertBefore(decisionLink,back);
+    }
+    if(data.role==='admin'&&actions&&back&&!doc.getElementById('independentReviewsLink')){
+      const link=doc.createElement('a');
+      link.id='independentReviewsLink';
+      link.className='btn';
+      link.textContent='🧾 Independent Reviews';
+      link.title='Independent Reviews';
+      link.setAttribute('aria-label','Independent Reviews');
+      link.href='./independent-reviews-v2.html?token='+encodeURIComponent(token);
+      actions.insertBefore(link,back);
+    }
   }
 }
 frame.addEventListener('load',()=>enhance().catch(console.error));
