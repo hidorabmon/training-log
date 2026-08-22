@@ -85,6 +85,14 @@ async function enhance(){
       const data=await fetch(API+'?action=list&token='+encodeURIComponent(token)).then(r=>r.json());
       const actions=doc.querySelector('.actions');
       const back=doc.querySelector('#back');
+      if(data.role==='admin'&&actions&&back&&!doc.getElementById('decisionCenterLink')){
+        const decisionLink=doc.createElement('a');
+        decisionLink.id='decisionCenterLink';
+        decisionLink.className='btn';
+        decisionLink.textContent='📊 Manager Decision Center';
+        decisionLink.href='./dashboard-decision-test.html?token='+encodeURIComponent(token);
+        actions.insertBefore(decisionLink,back);
+      }
       if(data.role==='admin'&&actions&&back&&!doc.getElementById('independentReviewsLink')){
         const link=doc.createElement('a');
         link.id='independentReviewsLink';
