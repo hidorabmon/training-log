@@ -26,8 +26,7 @@
   const incoming=params.get('token')||sessionStorage.getItem('yang_admin_token')||'';
   if(incoming){try{sessionStorage.setItem('yang_admin_token',incoming)}catch(e){} document.getElementById('token').value=incoming;}
   document.getElementById('dashboardBack').href='./dashboard.html'+(incoming?'?token='+encodeURIComponent(incoming):'');
-  const toggle=document.getElementById('langToggle');
-  toggle.onclick=function(){lang=lang==='zh'?'en':'zh';applyLanguage();toggle.textContent=lang==='zh'?'🌐 EN':'🌐 中文'};
+  document.getElementById('langToggle').onclick=function(){lang=lang==='zh'?'en':'zh';applyLanguage();};
   if(incoming){connect();}else{setStatus(tr('missing'),tr('adminRequired'),'error');}
 })();
 </script>
