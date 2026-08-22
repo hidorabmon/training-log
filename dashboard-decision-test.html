@@ -5,10 +5,10 @@
 <title>Manager Decision Center｜Production</title>
 <link rel="stylesheet" href="./dashboard-decision-test.css">
 <link rel="stylesheet" href="./dashboard-decision-ai-test.css">
-<style>.role-status{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-weight:800;font-size:12px;color:#7a5200;background:transparent;border:0;padding:0;cursor:default;white-space:nowrap}.role-status::before{content:'👑'}@media(max-width:650px){#dashboardBack,#langToggle{font-size:0;min-width:44px;text-align:center}#dashboardBack::before{content:'🏠';font-size:16px}#langToggle::before{content:'🌐';font-size:16px}.role-status{font-size:0;margin-top:4px}.role-status::before{font-size:16px}}</style>
+<style>@media(max-width:650px){#dashboardBack,#langToggle{font-size:0;min-width:44px;text-align:center}#dashboardBack::before{content:'🏠';font-size:16px}#langToggle::before{content:'🌐';font-size:16px}}</style>
 </head>
 <body>
-<header class="topbar"><div class="topbar-inner"><div class="brand"><div class="brand-mark">🧭</div><div><h1 data-i18n="title">主管決策中心</h1><p data-i18n="subtitle">Machine Operator 新人訓練｜正式版本</p><div class="role-status" id="roleBadge">管理者模式</div></div></div><div class="lang-switch" role="group" aria-label="Navigation"><a class="button secondary" id="dashboardBack" title="Dashboard" aria-label="Dashboard">🏠 Dashboard</a><button id="langToggle" type="button" title="Switch language" aria-label="Switch language">🌐 EN</button></div></div></header>
+<header class="topbar"><div class="topbar-inner"><div class="brand"><div class="brand-mark">🧭</div><div><h1 data-i18n="title">主管決策中心</h1><p data-i18n="subtitle">Machine Operator 新人訓練｜正式版本</p></div></div><div class="lang-switch" role="group" aria-label="Navigation"><a class="button secondary" id="dashboardBack" title="Dashboard" aria-label="Dashboard">🏠 Dashboard</a><button id="langToggle" type="button" title="Switch language" aria-label="Switch language">🌐 EN</button></div></div></header>
 <main class="shell">
 <input id="token" type="hidden">
 <section class="status" id="status" aria-live="polite"><div class="status-copy"><b data-i18n="loading">正在載入</b><span data-i18n="loadingMessage">讀取訓練紀錄、獨立觀察與主管決策。</span></div></section>
@@ -26,9 +26,9 @@
   const incoming=params.get('token')||sessionStorage.getItem('yang_admin_token')||'';
   if(incoming){try{sessionStorage.setItem('yang_admin_token',incoming)}catch(e){} document.getElementById('token').value=incoming;}
   document.getElementById('dashboardBack').href='./dashboard.html'+(incoming?'?token='+encodeURIComponent(incoming):'');
-  const toggle=document.getElementById('langToggle'),badge=document.getElementById('roleBadge');
-  toggle.onclick=function(){lang=lang==='zh'?'en':'zh';applyLanguage();toggle.textContent=lang==='zh'?'🌐 EN':'🌐 中文';badge.textContent=lang==='zh'?'管理者模式':'Admin'};
-  if(incoming){connect();}else{badge.textContent=lang==='zh'?'一般模式':'Public';badge.style.color='#666';setStatus(tr('missing'),tr('adminRequired'),'error');}
+  const toggle=document.getElementById('langToggle');
+  toggle.onclick=function(){lang=lang==='zh'?'en':'zh';applyLanguage();toggle.textContent=lang==='zh'?'🌐 EN':'🌐 中文'};
+  if(incoming){connect();}else{setStatus(tr('missing'),tr('adminRequired'),'error');}
 })();
 </script>
 </body></html>
