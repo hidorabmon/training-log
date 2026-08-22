@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manager Decision Center｜Bilingual Test</title>
+<link rel="stylesheet" href="./dashboard-decision-test.css">
+<link rel="stylesheet" href="./dashboard-decision-ai-test.css">
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><div class="brand"><div class="brand-mark">📊</div><div><h1 data-i18n="title">主管決策中心</h1><p data-i18n="subtitle">Machine Operator 新人訓練｜測試版本</p></div></div><div class="lang-switch" role="group" aria-label="Language"><button id="zhBtn" class="active" type="button">繁中</button><button id="enBtn" type="button">EN</button></div></div></header>
+<main class="shell">
+<section class="status" id="status" aria-live="polite"><div class="status-copy"><b data-i18n="notConnected">尚未連線</b><span data-i18n="enterToken">輸入測試 Admin Token，讀取測試資料。</span></div><div class="token-row"><div><label for="token" data-i18n="testToken">Test Admin Token</label><input id="token" type="password" autocomplete="off" data-i18n-placeholder="tokenPlaceholder" placeholder="只保存在目前分頁"></div><button class="button secondary" id="connectBtn" type="button" data-i18n="connect">連接測試資料</button></div></section>
+<div class="eyebrow" data-i18n="overview">Decision overview</div>
+<section class="metrics"><div class="card metric"><span data-i18n="traineeCount">受訓者</span><strong class="blue" id="traineeCount">0</strong><small data-i18n="loadedRecords">已載入紀錄</small></div><div class="card metric"><span data-i18n="awaiting">等待決策</span><strong class="orange" id="pendingCount">0</strong><small data-i18n="pendingDecision">Pending decision</small></div><div class="card metric"><span data-i18n="attention">主管關注</span><strong class="red" id="attentionCount">0</strong><small data-i18n="fromReviews">來自 Independent Reviews</small></div><div class="card metric"><span data-i18n="finalized">已完成決策</span><strong class="green" id="finalCount">0</strong><small data-i18n="savedDecision">Saved decision</small></div></section>
+<div class="eyebrow" data-i18n="decisionWorkspace">Decision workspace</div>
+<section class="workspace"><aside class="card queue"><div class="queue-head"><h2 data-i18n="queue">決策佇列</h2><p data-i18n="selectTrainee">選擇受訓者查看完整證據</p></div><div class="queue-list" id="queue"><div class="empty" data-i18n="connectFirst">請先連接測試資料。</div></div></aside><article class="card detail" id="detail"><div class="empty" data-i18n="selectRecord">請選擇一筆受訓紀錄。</div></article></section>
+</main>
+<script src="./dashboard-decision-i18n-test.js"></script>
+<script src="./dashboard-decision-core-test.js"></script>
+<script src="./dashboard-decision-view-test.js"></script>
+</body></html>
